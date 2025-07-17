@@ -1,8 +1,10 @@
 package com.virtualbank.user.controller;
 
+import com.virtualbank.user.dto.UserProfileResponse;
 import com.virtualbank.user.dto.UserRegistrationRequest;
 import com.virtualbank.user.dto.UserRegistrationResponse;
 import com.virtualbank.user.exception.UserAlreadyExistsException;
+import com.virtualbank.user.exception.UserNotFoundException;
 import com.virtualbank.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -38,5 +41,18 @@ public class UserController {
         response.put("message", "To register a new user, send a POST request to this endpoint with the required user information.");
         response.put("requiredFields", "username, email, password, firstName, lastName");
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/{userId}/profile")
+    public ResponseEntity<?> getUserProfile(@PathVariable UUID userId) {
+        try {
+            UserProfileResponse response = userService.getUserProfile(userId);
+            return ResponseEntity.ok(response);
+        } catch (UserNotFoundException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", 404);
+            errorResponse.put("error", "Not Found");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
     }
 }

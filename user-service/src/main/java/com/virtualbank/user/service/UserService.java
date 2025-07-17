@@ -1,9 +1,11 @@
 package com.virtualbank.user.service;
 
+import com.virtualbank.user.dto.UserProfileResponse;
 import com.virtualbank.user.dto.UserRegistrationRequest;
 import com.virtualbank.user.dto.UserRegistrationResponse;
 import com.virtualbank.user.entity.User;
 import com.virtualbank.user.exception.UserAlreadyExistsException;
+import com.virtualbank.user.exception.UserNotFoundException;
 import com.virtualbank.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -51,5 +54,19 @@ public class UserService {
             logger.error("Error saving user: {}", e.getMessage(), e);
             throw e;
         }
+    }
+    public UserProfileResponse getUserProfile(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        return UserProfileResponse.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .createdAt(user.getCreatedAt())
+                .isActive(user.getIsActive())
+                .build();
     }
 }
