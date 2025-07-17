@@ -1,9 +1,8 @@
 package com.virtualbank.user.service;
 
-import com.virtualbank.user.dto.UserProfileResponse;
-import com.virtualbank.user.dto.UserRegistrationRequest;
-import com.virtualbank.user.dto.UserRegistrationResponse;
+import com.virtualbank.user.dto.*;
 import com.virtualbank.user.entity.User;
+import com.virtualbank.user.exception.InvalidCredentialsException;
 import com.virtualbank.user.exception.UserAlreadyExistsException;
 import com.virtualbank.user.exception.UserNotFoundException;
 import com.virtualbank.user.repository.UserRepository;
@@ -69,4 +68,19 @@ public class UserService {
                 .isActive(user.getIsActive())
                 .build();
     }
+
+
+    @Transactional
+    public UserLoginResponse login(UserLoginRequest request){
+        try {
+            return userRepository.findByUsername(request.getUsername())
+                    .filter(user -> passwordEncoder.matches(request.getPassword(), user.getPasswordHash()))
+                    .map(user -> new UserLoginResponse(user.getUserId(), user.getUsername()))
+                    .orElseThrow(() -> new InvalidCredentialsException("Invalid Credentials"));
+        } catch (Exception e) {
+            logger.error("Error logging in: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
 }

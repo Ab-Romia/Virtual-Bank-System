@@ -3,6 +3,9 @@ package com.virtualbank.user.controller;
 import com.virtualbank.user.dto.UserProfileResponse;
 import com.virtualbank.user.dto.UserRegistrationRequest;
 import com.virtualbank.user.dto.UserRegistrationResponse;
+import com.virtualbank.user.dto.UserLoginRequest;
+import com.virtualbank.user.dto.UserLoginResponse;
+import com.virtualbank.user.exception.InvalidCredentialsException;
 import com.virtualbank.user.exception.UserAlreadyExistsException;
 import com.virtualbank.user.exception.UserNotFoundException;
 import com.virtualbank.user.service.UserService;
@@ -35,13 +38,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         }
     }
-    @GetMapping("/register")
-    public ResponseEntity<Map<String, String>> getRegisterInfo() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "To register a new user, send a POST request to this endpoint with the required user information.");
-        response.put("requiredFields", "username, email, password, firstName, lastName");
-        return ResponseEntity.ok(response);
-    }
+
     @GetMapping("/{userId}/profile")
     public ResponseEntity<?> getUserProfile(@PathVariable UUID userId) {
         try {
@@ -53,6 +50,19 @@ public class UserController {
             errorResponse.put("error", "Not Found");
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
+    }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginRequest request) {
+        try {
+            UserLoginResponse response = userService.login(request);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch(InvalidCredentialsException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", 401);
+            errorResponse.put("error", "Unauthorized");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
 }
