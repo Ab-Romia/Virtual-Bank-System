@@ -1,6 +1,7 @@
 package com.virtualbank.transaction_service.dto;
 
 import com.virtualbank.transaction_service.entity.Transaction;
+import com.virtualbank.transaction_service.entity.TransactionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,12 +19,13 @@ public class TransactionsResponse {
     private BigDecimal amount;
     private String description;
     private ZonedDateTime timestamp;
-
+    private String status;
     public TransactionsResponse(Transaction transaction, UUID accountId) {
         this.transactionId = transaction.getTransactionId();
         this.accountId = accountId;
         this.amount = transaction.getAmount();
         this.description = transaction.getDescription();
         this.timestamp = transaction.getCreatedAt();
+        this.status = transaction.getStatus().name(); // Set status from the transaction entity
     }
 }

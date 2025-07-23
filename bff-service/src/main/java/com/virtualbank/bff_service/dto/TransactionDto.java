@@ -6,9 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -18,7 +16,9 @@ import java.util.UUID;
 public class TransactionDto {
     private UUID transactionId;
     private BigDecimal amount;
+    private UUID fromAccountId;
     private UUID toAccountId;
     private String description;
     private ZonedDateTime timestamp;
+    private String status;
 }
