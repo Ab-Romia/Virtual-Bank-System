@@ -48,9 +48,11 @@ public class DashboardService {
                                                     .map(t -> TransactionDto.builder()
                                                             .transactionId(t.getTransactionId())
                                                             .amount(t.getAmount())
+                                                            .fromAccountId(t.getFromAccountId())
                                                             .toAccountId(t.getToAccountId())
                                                             .description(t.getDescription())
                                                             .timestamp(t.getTimestamp())
+                                                            .status(t.getStatus())
                                                             .build())
                                                     .collect(Collectors.toList());
 

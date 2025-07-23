@@ -2,7 +2,6 @@ package com.virtualbank.bff_service.client;
 
 import com.virtualbank.bff_service.dto.TransactionsResponseDto;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -13,13 +12,10 @@ import java.util.UUID;
 @Component
 public class TransactionServiceClient {
     private final WebClient transactionServiceWebClient;
-    private final String transactionServiceUrl;
 
     public TransactionServiceClient(
-            @Qualifier("transactionServiceWebClient") WebClient transactionServiceWebClient,
-            @Value("${transaction.service.url}") String transactionServiceUrl) {
+            @Qualifier("transactionServiceWebClient") WebClient transactionServiceWebClient) {
         this.transactionServiceWebClient = transactionServiceWebClient;
-        this.transactionServiceUrl = transactionServiceUrl;
     }
 
     public Mono<List<TransactionsResponseDto>> getAccountTransactions(UUID accountId) {
@@ -27,10 +23,19 @@ public class TransactionServiceClient {
                 .uri("/accounts/{accountId}/transactions", accountId)
                 .retrieve()
                 .bodyToFlux(TransactionsResponseDto.class)
+                .doOnNext(t -> {
+                    if (t.getAmount().doubleValue() < 0) {
+                        t.setFromAccountId(accountId);
+                        t.setToAccountId(UUID.randomUUID());
+                    } else {
+                        t.setToAccountId(accountId);
+                        t.setFromAccountId(UUID.randomUUID());
+                    }
+                })
                 .collectList()
                 .onErrorResume(e -> {
                     System.err.println("Error fetching transactions: " + e.getMessage());
                     return Mono.just(List.of());
-                }); // Return empty list if no transactions
+                });
     }
 }
