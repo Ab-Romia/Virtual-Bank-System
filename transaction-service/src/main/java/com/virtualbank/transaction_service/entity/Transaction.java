@@ -48,6 +48,9 @@ public class Transaction {
     @Column(name = "updated_at", nullable = false)
     private ZonedDateTime updatedAt;
 
+    @Column(length = 255)
+    private String failureReason;
+
     @PrePersist
     protected void onCreate() {
         transactionId = UUID.randomUUID();

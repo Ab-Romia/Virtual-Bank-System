@@ -1,29 +1,37 @@
 package com.virtualbank.account.service;
 
-import com.virtualbank.account.dto.AccountResponse;
-import com.virtualbank.account.dto.TransferRequest;
-import com.virtualbank.account.dto.TransferResponse;
+import com.virtualbank.account.client.UserClient;
+import com.virtualbank.account.exception.UserNotFoundException;
+import com.virtualbank.account.dto.*;
 import com.virtualbank.account.exception.AccountNotFoundException;
 import com.virtualbank.account.exception.InsufficientFundsException;
+import com.virtualbank.account.exception.InvalidCreationException;
 import com.virtualbank.account.model.Account;
 import com.virtualbank.account.model.AccountTransaction;
+import com.virtualbank.account.model.Status;
 import com.virtualbank.account.repository.AccountRepository;
 import com.virtualbank.account.repository.AccountTransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountTransactionRepository transactionRepository;
-
+    private final UserClient userClient;
     public AccountService(AccountRepository accountRepository,
-                          AccountTransactionRepository transactionRepository) {
+                          AccountTransactionRepository transactionRepository,
+                          UserClient userClient) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.userClient = userClient;
     }
 
     @Transactional
@@ -93,5 +101,61 @@ public class AccountService {
         response.setLastTransactionAt(account.getLastTransactionAt());
 
         return response;
+    }
+
+    public String generateUniqueAccountNumber() {
+        String accountNumber;
+        do {
+            accountNumber = AccountNumberGenerator.generateUniqueAccountNumber();
+        } while (accountRepository.existsByAccountNumber(accountNumber));
+        return accountNumber;
+    }
+
+
+
+    @Transactional
+    public List<UserAccountsResponse> findUserAccounts(UUID userId){
+        List<Account> accounts = accountRepository.findByUserId(userId);
+
+        if(accounts.isEmpty()){
+            throw new AccountNotFoundException("No accounts found");
+        }
+        List<UserAccountsResponse> response = accounts.stream().map(UserAccountsResponse::new).collect(Collectors.toList());
+
+        return response;
+    }
+    @Transactional
+    public CreateResponse createAccount(CreateRequest request) {
+        try {
+            // Validate user exists
+            if (!userClient.validateUserExists(request.getUserId())) {
+                throw new UserNotFoundException("User with ID " + request.getUserId() + " not found");
+            }
+
+            if (request.getInitialBalance().compareTo(BigDecimal.ZERO) < 0) {
+                throw new InvalidCreationException("Invalid account type or balance");
+            }
+
+            //create new account for user
+            Account account = Account.builder()
+                    .userId(request.getUserId())
+                    .accountNumber(generateUniqueAccountNumber())
+                    .accountType(request.getAccountType())
+                    .balance(request.getInitialBalance())
+                    .status(Status.ACTIVE)
+                    .createdAt(ZonedDateTime.now())
+                    .updatedAt(ZonedDateTime.now())
+                    .build();
+
+            Account savedAcc = accountRepository.save(account);
+
+            return CreateResponse.builder()
+                    .accountId(savedAcc.getAccountId())
+                    .accountNumber(savedAcc.getAccountNumber())
+                    .message("Account created")
+                    .build();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
