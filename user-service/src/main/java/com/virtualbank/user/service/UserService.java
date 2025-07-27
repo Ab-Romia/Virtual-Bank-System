@@ -25,12 +25,10 @@ public class UserService {
     @Transactional
     public UserRegistrationResponse registerUser(UserRegistrationRequest request) {
         try {
-            // Check if username or email already exists
             if (userRepository.existsByUsernameOrEmail(request.getUsername(), request.getEmail())) {
                 throw new UserAlreadyExistsException("Username or email already exists");
             }
 
-            // Create new user
             User user = User.builder()
                     .username(request.getUsername())
                     .email(request.getEmail())

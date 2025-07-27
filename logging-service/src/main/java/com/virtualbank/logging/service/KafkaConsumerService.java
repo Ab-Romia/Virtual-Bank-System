@@ -34,10 +34,8 @@ public class KafkaConsumerService {
         try {
             log.info("Received message from Kafka: {}", messageMap);
 
-            // Convert the message to a string
             String messageStr = objectMapper.writeValueAsString(messageMap.get("message"));
 
-            // Convert timestamp if it's a number
             OffsetDateTime dateTime;
             Object rawDateTime = messageMap.get("dateTime");
             if (rawDateTime instanceof Number) {
@@ -64,7 +62,7 @@ public class KafkaConsumerService {
 
         } catch (Exception e) {
             log.error("An unexpected error occurred while processing the message: {}", messageMap, e);
-            e.printStackTrace();  // More detailed error logging
+            e.printStackTrace();
         }
     }
 }

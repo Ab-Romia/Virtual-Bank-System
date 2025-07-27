@@ -10,7 +10,7 @@ public class AccountNumberGenerator {
         StringBuilder sb = new StringBuilder();
         Random random = new Random();
         for (int i = 0; i < LENGTH; i++) {
-            sb.append(random.nextInt(10)); // digit from 0 to 9
+            sb.append(random.nextInt(10));
         }
         return sb.toString();
     }
