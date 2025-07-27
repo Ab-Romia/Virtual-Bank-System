@@ -1,4 +1,4 @@
-POST http://localhost:8080/bff/transactions/transfer/initiation
+POST http://localhost:8083/transactions/transfer/initiation
 Content-Type: application/json
 
 {
