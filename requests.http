@@ -1,9 +1,531 @@
-POST http://localhost:8083/transactions/transfer/initiation
+### ========================================
+### VIRTUAL BANKING SYSTEM - API TESTS
+### ========================================
+
+### Variables for reuse (update ports based on your setup)
+@userServiceUrl = http://localhost:8081
+@accountServiceUrl = http://localhost:8082
+@transactionServiceUrl = http://localhost:8083
+@bffServiceUrl = http://localhost:8084
+
+### Test Users Data
+@testUser1 = john.doe
+@testUser1Email = john.doe@example.com
+@testUser1Password = securePassword123
+
+@testUser2 = jane.smith
+@testUser2Email = jane.smith@example.com
+@testUser2Password = anotherSecure456
+
+### ========================================
+### 1. USER SERVICE TESTS
+### ========================================
+
+### 1.1 Register First Test User - Valid Data
+POST {{userServiceUrl}}/users/register
 Content-Type: application/json
 
 {
-  "fromAccountId": "1039aa32-04df-4eb1-97cd-e40c295c99fd",
-  "toAccountId": "2989e802-2090-40b9-a4d9-bb27b4b5ad0e",
-  "amount": 100000.00,
-  "description": "Test transfer"
+  "username": "{{testUser1}}",
+  "password": "{{testUser1Password}}",
+  "email": "{{testUser1Email}}",
+  "firstName": "John",
+  "lastName": "Doe"
 }
+
+### 1.2 Register Second Test User - Valid Data
+POST {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "{{testUser2}}",
+  "password": "{{testUser2Password}}",
+  "email": "{{testUser2Email}}",
+  "firstName": "Jane",
+  "lastName": "Smith"
+}
+
+### 1.3 Register User - Duplicate Username (Should fail with 409)
+POST {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "{{testUser1}}",
+  "password": "differentPassword789",
+  "email": "different.email@example.com",
+  "firstName": "Different",
+  "lastName": "User"
+}
+
+### 1.4 Register User - Duplicate Email (Should fail with 409)
+POST {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "different.username",
+  "password": "anotherPassword789",
+  "email": "{{testUser1Email}}",
+  "firstName": "Another",
+  "lastName": "User"
+}
+
+### 1.5 Register User - Invalid Data (Missing required fields)
+POST {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": "short",
+  "email": "invalid-email",
+  "firstName": "",
+  "lastName": ""
+}
+
+### 1.6 Register User - Weak Password (if validation exists)
+POST {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "weakpass.user",
+  "password": "123",
+  "email": "weak@example.com",
+  "firstName": "Weak",
+  "lastName": "Password"
+}
+
+### 1.7 Login - Valid Credentials (User 1)
+POST {{userServiceUrl}}/users/login
+Content-Type: application/json
+
+{
+  "username": "{{testUser1}}",
+  "password": "{{testUser1Password}}"
+}
+
+### 1.8 Login - Valid Credentials (User 2)
+POST {{userServiceUrl}}/users/login
+Content-Type: application/json
+
+{
+  "username": "{{testUser2}}",
+  "password": "{{testUser2Password}}"
+}
+
+### 1.9 Login - Invalid Username
+POST {{userServiceUrl}}/users/login
+Content-Type: application/json
+
+{
+  "username": "nonexistent.user",
+  "password": "{{testUser1Password}}"
+}
+
+### 1.10 Login - Invalid Password
+POST {{userServiceUrl}}/users/login
+Content-Type: application/json
+
+{
+  "username": "{{testUser1}}",
+  "password": "wrongPassword"
+}
+
+### 1.11 Login - Empty Credentials
+POST {{userServiceUrl}}/users/login
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": ""
+}
+
+### 1.12 Get User Profile - Valid User ID (Replace with actual userId from registration response)
+GET {{userServiceUrl}}/users/847aa3be-135a-4ff7-9301-74b842ead458/profile
+Authorization: Bearer your-auth-token-here
+
+### 1.13 Get User Profile - Invalid User ID
+GET {{userServiceUrl}}/users/847aa3be-135a-4ff7-9201-74b842ead458/profile
+Authorization: Bearer your-auth-token-here
+
+
+### ========================================
+### 2. ACCOUNT SERVICE TESTS
+### ========================================
+
+### 2.1 Create Account - Valid Savings Account
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "fccf3ebd-49dd-40cb-a568-fa029b58cbe9",
+  "accountType": "SAVINGS",
+  "initialBalance": 1000.00
+}
+
+### 2.2 Create Account - Valid Checking Account
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "accountType": "CHECKING",
+  "initialBalance": 500.50
+}
+
+### 2.3 Create Account - Another User's Savings Account
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "b2c3d4e5-f6g7-8901-2345-678901bcdefg",
+  "accountType": "SAVINGS",
+  "initialBalance": 2000.00
+}
+
+### 2.4 Create Account - Invalid Account Type
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "accountType": "INVALID_TYPE",
+  "initialBalance": 100.00
+}
+
+### 2.5 Create Account - Negative Initial Balance
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "accountType": "SAVINGS",
+  "initialBalance": -100.00
+}
+
+### 2.6 Create Account - Invalid User ID
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "invalid-user-id",
+  "accountType": "SAVINGS",
+  "initialBalance": 100.00
+}
+
+### 2.7 Get Account Details - Valid Account ID (Replace with actual accountId)
+GET {{accountServiceUrl}}/accounts/f1e2d3c4-b5a6-9876-5432-10fedcba9876
+
+### 2.8 Get Account Details - Invalid Account ID
+GET {{accountServiceUrl}}/accounts/invalid-account-id
+
+### 2.9 Get User's Accounts - Valid User ID
+GET {{accountServiceUrl}}/users/a1b2c3d4-e5f6-7890-1234-567890abcdef/accounts
+
+### 2.10 Get User's Accounts - Invalid User ID
+GET {{accountServiceUrl}}/users/invalid-user-id/accounts
+
+### 2.11 Get User's Accounts - User with No Accounts
+GET {{accountServiceUrl}}/users/c3d4e5f6-g7h8-9012-3456-789012cdefgh/accounts
+
+### 2.12 Transfer Between Accounts - Valid Transfer
+PUT {{accountServiceUrl}}/accounts/transfer
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 100.00
+}
+
+### 2.13 Transfer Between Accounts - Insufficient Funds
+PUT {{accountServiceUrl}}/accounts/transfer
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 999999.00
+}
+
+### 2.14 Transfer Between Accounts - Invalid From Account
+PUT {{accountServiceUrl}}/accounts/transfer
+Content-Type: application/json
+
+{
+  "fromAccountId": "invalid-account-id",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 100.00
+}
+
+### 2.15 Transfer Between Accounts - Same Account (Self Transfer)
+PUT {{accountServiceUrl}}/accounts/transfer
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "amount": 100.00
+}
+
+### ========================================
+### 3. TRANSACTION SERVICE TESTS
+### ========================================
+
+### 3.1 Initiate Transfer - Valid Transaction
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 150.00,
+  "description": "Valid transfer test"
+}
+
+### 3.2 Initiate Transfer - Invalid From Account
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "invalid-account-id",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 50.00,
+  "description": "Invalid from account test"
+}
+
+### 3.3 Initiate Transfer - Invalid To Account
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "invalid-account-id",
+  "amount": 50.00,
+  "description": "Invalid to account test"
+}
+
+### 3.4 Initiate Transfer - Zero Amount
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 0.00,
+  "description": "Zero amount test"
+}
+
+### 3.5 Initiate Transfer - Negative Amount
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": -100.00,
+  "description": "Negative amount test"
+}
+
+### 3.6 Initiate Transfer - Large Amount (Edge Case)
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 999999999.99,
+  "description": "Large amount test"
+}
+
+### 3.7 Execute Transfer - Valid Transaction ID (Replace with actual transactionId)
+POST {{transactionServiceUrl}}/transactions/transfer/execution
+Content-Type: application/json
+
+{
+  "transactionId": "t1r2a3n4-s5a6-7890-1234-567890abcdef"
+}
+
+### 3.8 Execute Transfer - Invalid Transaction ID
+POST {{transactionServiceUrl}}/transactions/transfer/execution
+Content-Type: application/json
+
+{
+  "transactionId": "invalid-transaction-id"
+}
+
+### 3.9 Execute Transfer - Already Executed Transaction
+POST {{transactionServiceUrl}}/transactions/transfer/execution
+Content-Type: application/json
+
+{
+  "transactionId": "t1r2a3n4-s5a6-7890-1234-567890abcdef"
+}
+
+### 3.10 Get Account Transactions - Valid Account ID
+GET {{transactionServiceUrl}}/accounts/f1e2d3c4-b5a6-9876-5432-10fedcba9876/transactions
+
+### 3.11 Get Account Transactions - Invalid Account ID
+GET {{transactionServiceUrl}}/accounts/invalid-account-id/transactions
+
+### 3.12 Get Account Transactions - Account with No Transactions
+GET {{transactionServiceUrl}}/accounts/empty-account-id/transactions
+
+### ========================================
+### 4. BFF SERVICE TESTS
+### ========================================
+
+### 4.1 Get Dashboard - Valid User ID (Replace with actual userId)
+GET {{bffServiceUrl}}/bff/dashboard/a1b2c3d4-e5f6-7890-1234-567890abcdef
+
+### 4.2 Get Dashboard - Invalid User ID
+GET {{bffServiceUrl}}/bff/dashboard/invalid-user-id
+
+### 4.3 Get Dashboard - User with No Accounts
+GET {{bffServiceUrl}}/bff/dashboard/c3d4e5f6-g7h8-9012-3456-789012cdefgh
+
+### ========================================
+### 5. STRESS AND EDGE CASE TESTS
+### ========================================
+
+### 5.1 Concurrent Transfer Initiations (Run multiple times quickly)
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 10.00,
+  "description": "Concurrent test 1"
+}
+
+### 5.2 Multiple Account Creation for Same User
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "accountType": "SAVINGS",
+  "initialBalance": 100.00
+}
+
+### 5.3 Very Long Description Test
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 25.00,
+  "description": "This is a very long description that tests the maximum length allowed for transaction descriptions and whether the system handles it gracefully without truncation or errors"
+}
+
+### 5.4 Special Characters in User Data
+POST {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "test.user-123",
+  "password": "P@ssw0rd!2023",
+  "email": "test+user@example-domain.com",
+  "firstName": "José",
+  "lastName": "O'Connor-Smith"
+}
+
+### 5.5 Decimal Precision Test
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 1.999,
+  "description": "Decimal precision test"
+}
+
+### ========================================
+### 6. MALFORMED REQUEST TESTS
+### ========================================
+
+
+### 6.2 Missing Content-Type Header
+POST {{userServiceUrl}}/users/register
+
+{
+  "username": "test.user",
+  "password": "password123",
+  "email": "test@example.com",
+  "firstName": "Test",
+  "lastName": "User"
+}
+
+### 6.3 Wrong HTTP Method
+GET {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "test.user",
+  "password": "password123",
+  "email": "test@example.com",
+  "firstName": "Test",
+  "lastName": "User"
+}
+
+### ========================================
+### 7. BOUNDARY VALUE TESTS
+### ========================================
+
+### 7.1 Maximum Username Length (if limit exists)
+POST {{userServiceUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "verylongusernamethatexceedsmaximumlengthallowedbytheapplication",
+  "password": "password123",
+  "email": "long@example.com",
+  "firstName": "Long",
+  "lastName": "Username"
+}
+
+### 7.2 Minimum Transfer Amount
+POST {{transactionServiceUrl}}/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+  "amount": 0.01,
+  "description": "Minimum amount test"
+}
+
+### 7.3 Very Small Account Balance
+POST {{accountServiceUrl}}/accounts
+Content-Type: application/json
+
+{
+  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "accountType": "SAVINGS",
+  "initialBalance": 0.01
+}
+
+### ========================================
+### NOTES FOR TESTING:
+### ========================================
+###
+### 1. Replace placeholder UUIDs with actual values from responses
+### 2. Update service URLs and ports based on your setup
+### 3. Add authentication headers where required
+### 4. Test sequences: Register → Login → Create Accounts → Transactions → Dashboard
+### 5. Monitor logs for Kafka message production/consumption
+### 6. Check database for proper data persistence
+### 7. Verify account status changes after 24 hours (scheduled job)
+### 8. Test API Gateway endpoints once configured
+###
+### Expected Response Codes:
+### - 200: Successful GET, PUT operations
+### - 201: Successful POST creation
+### - 400: Bad Request (validation errors)
+### - 401: Unauthorized (authentication issues)
+### - 404: Not Found (resource doesn't exist)
+### - 409: Conflict (duplicate data)
+### - 500: Internal Server Error (system issues)
+###
+### ========================================
