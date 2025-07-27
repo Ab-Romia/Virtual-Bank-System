@@ -26,6 +26,6 @@ public class TransactionsResponse {
         this.amount = transaction.getAmount();
         this.description = transaction.getDescription();
         this.timestamp = transaction.getCreatedAt();
-        this.status = transaction.getStatus().name(); // Set status from the transaction entity
+        this.status = transaction.getStatus().name();
     }
 }

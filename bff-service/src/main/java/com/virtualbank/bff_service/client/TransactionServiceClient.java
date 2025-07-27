@@ -1,10 +1,11 @@
 package com.virtualbank.bff_service.client;
 
-import com.virtualbank.bff_service.dto.TransactionsResponseDto;
+import com.virtualbank.bff_service.dto.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 import java.util.UUID;

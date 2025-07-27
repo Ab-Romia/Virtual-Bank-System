@@ -1,0 +1,9 @@
+POST http://localhost:8080/bff/transactions/transfer/initiation
+Content-Type: application/json
+
+{
+  "fromAccountId": "1039aa32-04df-4eb1-97cd-e40c295c99fd",
+  "toAccountId": "2989e802-2090-40b9-a4d9-bb27b4b5ad0e",
+  "amount": 100000.00,
+  "description": "Test transfer"
+}
