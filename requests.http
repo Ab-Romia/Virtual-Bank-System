@@ -6,7 +6,7 @@
 @userServiceUrl = http://localhost:8081
 @accountServiceUrl = http://localhost:8082
 @transactionServiceUrl = http://localhost:8083
-@bffServiceUrl = http://localhost:8084
+@bffServiceUrl = http://localhost:8080
 
 ### Test Users Data
 @testUser1 = john.doe
@@ -166,7 +166,7 @@ POST {{accountServiceUrl}}/accounts
 Content-Type: application/json
 
 {
-  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "userId": "fccf3ebd-49dd-40cb-a568-fa029b58cbe9",
   "accountType": "CHECKING",
   "initialBalance": 500.50
 }
@@ -176,7 +176,7 @@ POST {{accountServiceUrl}}/accounts
 Content-Type: application/json
 
 {
-  "userId": "b2c3d4e5-f6g7-8901-2345-678901bcdefg",
+  "userId": "42d56a2c-dfec-43e4-b9aa-6d09742d723d",
   "accountType": "SAVINGS",
   "initialBalance": 2000.00
 }
@@ -186,7 +186,7 @@ POST {{accountServiceUrl}}/accounts
 Content-Type: application/json
 
 {
-  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "userId": "42d56a2c-dfec-43e4-b9aa-6d09742d723d",
   "accountType": "INVALID_TYPE",
   "initialBalance": 100.00
 }
@@ -196,7 +196,7 @@ POST {{accountServiceUrl}}/accounts
 Content-Type: application/json
 
 {
-  "userId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "userId": "42d56a2c-dfec-43e4-b9aa-6d09742d723d",
   "accountType": "SAVINGS",
   "initialBalance": -100.00
 }
@@ -206,19 +206,19 @@ POST {{accountServiceUrl}}/accounts
 Content-Type: application/json
 
 {
-  "userId": "invalid-user-id",
+  "userId": "42d56a2c-dfec-43e4-b9aa-3d09742d723d",
   "accountType": "SAVINGS",
   "initialBalance": 100.00
 }
 
 ### 2.7 Get Account Details - Valid Account ID (Replace with actual accountId)
-GET {{accountServiceUrl}}/accounts/f1e2d3c4-b5a6-9876-5432-10fedcba9876
+GET {{accountServiceUrl}}/accounts/def8480f-48f9-4fff-9c8d-342b9571afef
 
 ### 2.8 Get Account Details - Invalid Account ID
-GET {{accountServiceUrl}}/accounts/invalid-account-id
+GET {{accountServiceUrl}}/accounts/def8480f-48f9-4fff-3c8d-342b9571afef
 
 ### 2.9 Get User's Accounts - Valid User ID
-GET {{accountServiceUrl}}/users/a1b2c3d4-e5f6-7890-1234-567890abcdef/accounts
+GET {{accountServiceUrl}}/users/847aa3be-135a-4ff7-9301-74b842ead458/accounts
 
 ### 2.10 Get User's Accounts - Invalid User ID
 GET {{accountServiceUrl}}/users/invalid-user-id/accounts
@@ -361,7 +361,7 @@ Content-Type: application/json
 }
 
 ### 3.10 Get Account Transactions - Valid Account ID
-GET {{transactionServiceUrl}}/accounts/f1e2d3c4-b5a6-9876-5432-10fedcba9876/transactions
+GET {{transactionServiceUrl}}/accounts/d2b40e23-7017-4f8a-8a10-998585ee8452/transactions
 
 ### 3.11 Get Account Transactions - Invalid Account ID
 GET {{transactionServiceUrl}}/accounts/invalid-account-id/transactions
@@ -374,7 +374,7 @@ GET {{transactionServiceUrl}}/accounts/empty-account-id/transactions
 ### ========================================
 
 ### 4.1 Get Dashboard - Valid User ID (Replace with actual userId)
-GET {{bffServiceUrl}}/bff/dashboard/a1b2c3d4-e5f6-7890-1234-567890abcdef
+GET {{bffServiceUrl}}/bff/dashboard/7390e05a-d69f-4293-93d8-709937112455
 
 ### 4.2 Get Dashboard - Invalid User ID
 GET {{bffServiceUrl}}/bff/dashboard/invalid-user-id
@@ -506,26 +506,5 @@ Content-Type: application/json
   "initialBalance": 0.01
 }
 
-### ========================================
-### NOTES FOR TESTING:
-### ========================================
-###
-### 1. Replace placeholder UUIDs with actual values from responses
-### 2. Update service URLs and ports based on your setup
-### 3. Add authentication headers where required
-### 4. Test sequences: Register → Login → Create Accounts → Transactions → Dashboard
-### 5. Monitor logs for Kafka message production/consumption
-### 6. Check database for proper data persistence
-### 7. Verify account status changes after 24 hours (scheduled job)
-### 8. Test API Gateway endpoints once configured
-###
-### Expected Response Codes:
-### - 200: Successful GET, PUT operations
-### - 201: Successful POST creation
-### - 400: Bad Request (validation errors)
-### - 401: Unauthorized (authentication issues)
-### - 404: Not Found (resource doesn't exist)
-### - 409: Conflict (duplicate data)
-### - 500: Internal Server Error (system issues)
-###
-### ========================================
+
+
