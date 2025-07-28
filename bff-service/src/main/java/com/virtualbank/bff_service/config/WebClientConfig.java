@@ -21,7 +21,6 @@ public class WebClientConfig {
     public WebClient transactionServiceWebClient() {
         return WebClient.builder()
                 .baseUrl(transactionServiceUrl)
-                .defaultHeaders(headers -> headers.setBasicAuth("admin", "admin"))
                 .build();
     }
 
