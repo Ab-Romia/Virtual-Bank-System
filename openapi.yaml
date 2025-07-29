@@ -1,0 +1,625 @@
+openapi: 3.0.3
+info:
+  title: Virtual Bank API
+  description: |-
+    This is the comprehensive API documentation for the Virtual Bank System.
+    It includes endpoints for all microservices: User, Account, Transaction, and the BFF.
+    The APIs are designed to be managed and secured by a WSO2 API Gateway, using OAuth2 and API Keys.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/bff
+    description: BFF Service
+  - url: http://localhost:8081/users
+    description: User Service
+  - url: http://localhost:8082
+    description: Account Service
+  - url: http://localhost:8083
+    description: Transaction Service
+
+tags:
+  - name: BFF Service
+    description: The Backend-for-Frontend aggregates data from downstream services.
+  - name: User Service
+    description: Manages user registration, authentication, and profiles.
+  - name: Account Service
+    description: Manages bank accounts and balances.
+  - name: Transaction Service
+    description: Manages financial transactions.
+
+paths:
+  # BFF Service Endpoints
+  /dashboard/{userId}:
+    get:
+      tags:
+        - BFF Service
+      summary: Get User Dashboard
+      description: Fetches a consolidated dashboard view for a user, including their profile, accounts, and recent transactions for each account.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The UUID of the user.
+        - name: APP-NAME
+          in: header
+          schema:
+            type: string
+          description: The name of the calling application (e.g., 'PORTAL', 'MOBILE').
+      responses:
+        '200':
+          description: Successful retrieval of dashboard data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '400':
+          description: Invalid user ID format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error, often due to an issue with a downstream service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # User Service Endpoints
+  /register:
+    post:
+      tags:
+        - User Service
+      summary: Register a new user
+      description: Creates a new user profile with the provided details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+      responses:
+        '201':
+          description: User registered successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistrationResponse'
+        '409':
+          description: Username or email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /login:
+    post:
+      tags:
+        - User Service
+      summary: User Login
+      description: Authenticates a user and returns their ID and username.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoginResponse'
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{userId}/profile:
+    get:
+      tags:
+        - User Service
+      summary: Get User Profile
+      description: Retrieves the profile information for a specific user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful retrieval of user profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Account Service Endpoints
+  /accounts:
+    post:
+      tags:
+        - Account Service
+      summary: Create a new bank account
+      description: Creates a new bank account for a specified user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '201':
+          description: Account created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAccountResponse'
+        '400':
+          description: Invalid account type or initial balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User specified in the request not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/transfer:
+    put:
+      tags:
+        - Account Service
+      summary: Execute a funds transfer
+      description: A private endpoint called by the Transaction Service to update the balances of two accounts involved in a transfer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountTransferRequest'
+      responses:
+        '200':
+          description: Transfer completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: One or both accounts not found.
+        '400':
+          description: Insufficient funds in the 'from' account.
+
+  /accounts/{accountId}:
+    get:
+      tags:
+        - Account Service
+      summary: Get account details
+      description: Retrieves the full details of a specific bank account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful retrieval of account details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '404':
+          description: Account not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{userId}/accounts:
+    get:
+      tags:
+        - Account Service
+      summary: Find all accounts for a user
+      description: Retrieves a list of all bank accounts associated with a given user ID.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A list of user accounts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAccountsResponse'
+        '404':
+          description: No accounts found for the user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Transaction Service Endpoints
+  /transactions/transfer/initiation:
+    post:
+      tags:
+        - Transaction Service
+      summary: Initiate a fund transfer
+      description: Creates a transaction record with 'INITIATED' status.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferInitiationRequest'
+      responses:
+        '200':
+          description: Transfer initiated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferInitiationResponse'
+        '400':
+          description: Bad request, e.g., invalid data.
+
+  /transactions/transfer/execution:
+    post:
+      tags:
+        - Transaction Service
+      summary: Execute a fund transfer
+      description: Executes a previously initiated transfer. It validates accounts and funds, calls the Account Service to update balances, and updates the transaction status to 'SUCCESS' or 'FAILED'.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferExecutionRequest'
+      responses:
+        '200':
+          description: Transfer executed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferExecutionResponse'
+        '400':
+          description: Bad request, e.g., insufficient funds or inactive account.
+        '404':
+          description: Transaction ID not found or not in 'INITIATED' state.
+
+  /accounts/{accountId}/transactions:
+    get:
+      tags:
+        - Transaction Service
+      summary: Get account transaction history
+      description: Retrieves a list of successful transactions for a specific account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A list of transactions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionsResponse'
+        '404':
+          description: No transactions found for the account.
+
+components:
+  schemas:
+    # General
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+
+    # User Service
+    UserRegistrationRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+    UserRegistrationResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        username:
+          type: string
+        message:
+          type: string
+    UserLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    UserLoginResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        username:
+          type: string
+    UserProfileResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+
+    # Account Service
+    CreateAccountRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        accountType:
+          type: string
+          enum: [SAVINGS, CHECKING]
+        initialBalance:
+          type: number
+          format: double
+    CreateAccountResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+        message:
+          type: string
+    AccountTransferRequest:
+      type: object
+      properties:
+        fromAccountId:
+          type: string
+          format: uuid
+        toAccountId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+    AccountResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+        accountType:
+          type: string
+        balance:
+          type: number
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserAccountsResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+        accountType:
+          type: string
+        balance:
+          type: number
+        status:
+          type: string
+
+    # Transaction Service
+    TransferInitiationRequest:
+      type: object
+      properties:
+        fromAccountId:
+          type: string
+          format: uuid
+        toAccountId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+        description:
+          type: string
+    TransferInitiationResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: INITIATED
+        timestamp:
+          type: string
+          format: date-time
+    TransferExecutionRequest:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+    TransferExecutionResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [SUCCESS, FAILED]
+        timestamp:
+          type: string
+          format: date-time
+    TransactionsResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        fromAccountId:
+          type: string
+          format: uuid
+        toAccountId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+          example: SUCCESS
+
+    # BFF Service
+    DashboardResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardAccount'
+    DashboardAccount:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+        accountType:
+          type: string
+        balance:
+          type: number
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardTransaction'
+    DashboardTransaction:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        fromAccountId:
+          type: string
+          format: uuid
+        toAccountId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+  securitySchemes:
+    oAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: http://<wso2-gateway>/token
+          scopes: {}
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
+security:
+  - oAuth2: []
+  - apiKey: []
