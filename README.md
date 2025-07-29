@@ -9,36 +9,6 @@ This project is a fully functional, distributed virtual banking system designed 
 -   **API Gateway Integration:** The architecture is designed to be fronted by an API Gateway like WSO2. The gateway would serve as the single entry point for all external traffic, handling routing, authentication (OAuth2, API Key), rate-limiting, and request transformation.
 -   **Asynchronous Logging:** All microservices produce logs for requests and responses, sending them to a central Apache Kafka topic. A dedicated Logging service consumes these messages and persists them for centralized monitoring, auditing, and debugging.
 
-## High-Level Architecture
-External Clients (Web/Mobile Apps)
-|
-v
-+------------------------+
-|   WSO2 API Gateway     |  (Handles Auth, Routing, Throttling)
-+------------------------+
-|
-v
-+------------------------+
-|   BFF Service          |  (Aggregates and Orchestrates)
-+------------------------+
-|         |        |
-v         v        v
-+----------+ +----------+ +-------------+
-| User Svc | | Acct Svc | | Transact Svc|
-+----------+ +----------+ +-------------+
-|         |        |        |
-+---------+--------+--------+
-|
-v
-+------------------------+
-|   Apache Kafka Topic   |
-+------------------------+
-|
-v
-+------------------------+
-|   Logging Service      |  (Consumes logs and saves to DB)
-+------------------------+
-
 ## Microservices Breakdown
 
 | Service              | Description                                                                                             | Port |
