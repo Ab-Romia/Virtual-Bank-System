@@ -17,9 +17,9 @@ import java.util.List;
 public class AccountInactiveJob {
     private final AccountRepository accountRepository;
 
-    @Scheduled(fixedRate = 5 * 60 * 1000)
+    @Scheduled(fixedRate = 1 * 60 * 1000)
     public void inactivateStaleAccounts(){
-        ZonedDateTime cutoffTime = ZonedDateTime.now().minusMinutes(60);
+        ZonedDateTime cutoffTime = ZonedDateTime.now().minusMinutes(2);
         List<Account> staleAccounts = accountRepository.findByStatusAndLastTransactionAtBefore(Status.ACTIVE, cutoffTime);
         if (!staleAccounts.isEmpty()) {
             staleAccounts.forEach(account -> {

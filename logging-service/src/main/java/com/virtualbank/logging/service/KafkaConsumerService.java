@@ -20,7 +20,7 @@ import java.util.HashMap;
 public class KafkaConsumerService {
 
     private final LogEntryRepository logEntryRepository;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper; // for JSON serialization/deserialization
 
     @Autowired
     public KafkaConsumerService(LogEntryRepository logEntryRepository, ObjectMapper objectMapper) {
@@ -29,13 +29,13 @@ public class KafkaConsumerService {
     }
 
     @KafkaListener(topics = "${logging.topic.name}", groupId = "${spring.kafka.consumer.group-id}")
-    @Transactional
+    @Transactional // transaction to handle db operations
     public void listen(HashMap<String, Object> messageMap) {
         try {
             log.info("Received message from Kafka: {}", messageMap);
+//            System.out.println("Received message: " + messageMap);
 
-            String messageStr = objectMapper.writeValueAsString(messageMap.get("message"));
-
+            String messageStr = (String) messageMap.get("message");
             OffsetDateTime dateTime;
             Object rawDateTime = messageMap.get("dateTime");
             if (rawDateTime instanceof Number) {

@@ -5,6 +5,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -25,9 +26,10 @@ public class KafkaConsumerConfig {
     @Bean
     public ConsumerFactory<String, HashMap<String, Object>> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers); // server addr
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId); // group id
 
+        // deserialize for msg value
         JsonDeserializer<HashMap<String, Object>> deserializer = new JsonDeserializer<>(HashMap.class);
         deserializer.addTrustedPackages("*");
         deserializer.setUseTypeMapperForKey(true);
@@ -39,6 +41,7 @@ public class KafkaConsumerConfig {
         );
     }
 
+    // kafka listener container factory...
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, HashMap<String, Object>> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, HashMap<String, Object>> factory =

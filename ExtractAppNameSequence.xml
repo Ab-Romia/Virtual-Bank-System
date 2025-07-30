@@ -1,0 +1,16 @@
+<sequence xmlns="http://ws.apache.org/ns/synapse" name="ExtractAppNameSequence">
+    <!-- Extract the APP-NAME header -->
+    <property name="APP-NAME" expression="get-property('transport', 'APP-NAME')" scope="default"/>
+
+    <!-- Log the extracted APP-NAME for debugging -->
+    <log level="full">
+        <property name="Extracted APP-NAME" expression="get-property('APP-NAME')"/>
+    </log>
+
+    <!-- Forward the request to the backend -->
+    <send>
+        <endpoint>
+            <address uri="http://backend-service-url"/>
+        </endpoint>
+    </send>
+</sequence>

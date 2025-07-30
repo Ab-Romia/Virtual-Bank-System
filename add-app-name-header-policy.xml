@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="add-app-name-header-policy" xmlns="http://ws.apache.org/ns/synapse">
+    <switch source="$ctx:api.ut.application.name">
+        <case regex="vbank portal">
+            <header name="APP-NAME" scope="transport" value="PORTAL"/>
+        </case>
+        <case regex="vbank mobile">
+            <header name="APP-NAME" scope="transport" value="MOBILE"/>
+        </case>
+        <default>
+            <header name="APP-NAME" scope="transport" value="UNKNOWN"/>
+        </default>
+    </switch>
+</sequence>
