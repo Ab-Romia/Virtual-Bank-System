@@ -26,11 +26,11 @@ POST {{userServiceUrl}}/users/register
 Content-Type: application/json
 
 {
-  "username": "{{testUser1}}",
-  "password": "{{testUser1Password}}",
-  "email": "{{testUser1Email}}",
-  "firstName": "John",
-  "lastName": "Doe"
+  "username": "asddf.asdf",
+  "password": "1234123",
+  "email": "aasddf.hmd@gmail.com",
+  "firstName": "asd",
+  "lastName": "Doasdfe"
 }
 
 ### 1.2 Register Second Test User - Valid Data
@@ -98,8 +98,8 @@ POST {{userServiceUrl}}/users/login
 Content-Type: application/json
 
 {
-  "username": "{{testUser1}}",
-  "password": "{{testUser1Password}}"
+  "username": "mahmoud.ahmed",
+  "password": "12341234"
 }
 
 ### 1.8 Login - Valid Credentials (User 2)
@@ -139,8 +139,8 @@ Content-Type: application/json
 }
 
 ### 1.12 Get User Profile - Valid User ID (Replace with actual userId from registration response)
-GET {{userServiceUrl}}/users/847aa3be-135a-4ff7-9301-74b842ead458/profile
-Authorization: Bearer your-auth-token-here
+GET {{userServiceUrl}}/users/13f996da-604c-4a6d-9d4a-fc8e33aae6f3/profile
+#Authorization: Bearer your-auth-token-here
 
 ### 1.13 Get User Profile - Invalid User ID
 GET {{userServiceUrl}}/users/847aa3be-135a-4ff7-9201-74b842ead458/profile
@@ -156,9 +156,9 @@ POST {{accountServiceUrl}}/accounts
 Content-Type: application/json
 
 {
-  "userId": "fccf3ebd-49dd-40cb-a568-fa029b58cbe9",
-  "accountType": "SAVINGS",
-  "initialBalance": 1000.00
+  "userId": "13f996da-604c-4a6d-9d4a-fc8e33aae6f4",
+  "accountType": "CHECKING",
+  "initialBalance": 139990.00
 }
 
 ### 2.2 Create Account - Valid Checking Account
@@ -212,13 +212,13 @@ Content-Type: application/json
 }
 
 ### 2.7 Get Account Details - Valid Account ID (Replace with actual accountId)
-GET {{accountServiceUrl}}/accounts/def8480f-48f9-4fff-9c8d-342b9571afef
+GET {{accountServiceUrl}}/accounts/21ccd1d3-33de-41d6-8f15-343411e305e6
 
 ### 2.8 Get Account Details - Invalid Account ID
 GET {{accountServiceUrl}}/accounts/def8480f-48f9-4fff-3c8d-342b9571afef
 
 ### 2.9 Get User's Accounts - Valid User ID
-GET {{accountServiceUrl}}/users/847aa3be-135a-4ff7-9301-74b842ead458/accounts
+GET {{accountServiceUrl}}/users/13f996da-604c-4a6d-9d4a-fc8e33aae6f4/accounts
 
 ### 2.10 Get User's Accounts - Invalid User ID
 GET {{accountServiceUrl}}/users/invalid-user-id/accounts
@@ -231,9 +231,9 @@ PUT {{accountServiceUrl}}/accounts/transfer
 Content-Type: application/json
 
 {
-  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
-  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
-  "amount": 100.00
+  "fromAccountId": "21ccd1d3-33de-41d6-8f15-343411e305e6",
+  "toAccountId": "ca3de2fb-8cf7-42d8-9eb2-cbe4f522a3d6",
+  "amount": 1500.00
 }
 
 ### 2.13 Transfer Between Accounts - Insufficient Funds
@@ -275,9 +275,9 @@ POST {{transactionServiceUrl}}/transactions/transfer/initiation
 Content-Type: application/json
 
 {
-  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
-  "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
-  "amount": 150.00,
+  "fromAccountId": "df3b2d64-89ad-444d-9179-ad4dfbbe9dba",
+  "toAccountId": "b923e012-395f-4bfa-a00e-d74ef50d8f92",
+  "amount": 1000.00,
   "description": "Valid transfer test"
 }
 
@@ -330,7 +330,7 @@ POST {{transactionServiceUrl}}/transactions/transfer/initiation
 Content-Type: application/json
 
 {
-  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+  "fromAccountId": "f1e2d3c4-b5a6-9876-5432-10fedcba9846",
   "toAccountId": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
   "amount": 999999999.99,
   "description": "Large amount test"
@@ -341,7 +341,7 @@ POST {{transactionServiceUrl}}/transactions/transfer/execution
 Content-Type: application/json
 
 {
-  "transactionId": "t1r2a3n4-s5a6-7890-1234-567890abcdef"
+  "transactionId": "18b7fb44-65af-403f-93d3-2e51c5f96171"
 }
 
 ### 3.8 Execute Transfer - Invalid Transaction ID
@@ -357,7 +357,7 @@ POST {{transactionServiceUrl}}/transactions/transfer/execution
 Content-Type: application/json
 
 {
-  "transactionId": "t1r2a3n4-s5a6-7890-1234-567890abcdef"
+  "transactionId": "fb318617-f5e1-47fa-88fa-ed320c54cbaa"
 }
 
 ### 3.10 Get Account Transactions - Valid Account ID
@@ -374,7 +374,7 @@ GET {{transactionServiceUrl}}/accounts/empty-account-id/transactions
 ### ========================================
 
 ### 4.1 Get Dashboard - Valid User ID (Replace with actual userId)
-GET {{bffServiceUrl}}/bff/dashboard/7390e05a-d69f-4293-93d8-709937112455
+GET {{bffServiceUrl}}/bff/dashboard/847aa3be-135a-4ff7-9301-74b842ead458
 
 ### 4.2 Get Dashboard - Invalid User ID
 GET {{bffServiceUrl}}/bff/dashboard/invalid-user-id
