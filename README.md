@@ -21,13 +21,23 @@ This project is a fully functional, distributed virtual banking system designed 
 
 ## Technology Stack
 
+### Backend
 -   **Backend:** Java 11+
 -   **Framework:** Spring Boot
 -   **Messaging:** Apache Kafka
 -   **API Gateway:** Designed for WSO2 API Manager
 -   **Database:** H2 (in-memory, configurable to MySQL/PostgreSQL)
 -   **Build Tool:** Maven / Gradle
--   **API Testing:** Postman
+
+### Frontend
+-   **Framework:** React 18 with TypeScript
+-   **Build Tool:** Vite
+-   **State Management:** Zustand
+-   **Routing:** React Router
+-   **Styling:** Tailwind CSS
+-   **HTTP Client:** Axios
+-   **UI Components:** Lucide React Icons
+-   **Notifications:** React Hot Toast
 
 ## Getting Started
 
@@ -36,7 +46,8 @@ This project is a fully functional, distributed virtual banking system designed 
 -   JDK 11 or higher
 -   Maven or Gradle
 -   Docker and Docker Compose (for running Kafka and other dependencies)
--   Postman or a similar API client for testing
+-   Node.js 18+ and npm (for frontend)
+-   Postman or a similar API client for testing (optional)
 
 ### Installation & Setup
 
@@ -67,6 +78,36 @@ This project is a fully functional, distributed virtual banking system designed 
     ./gradlew bootRun
     ```
     Start the services in order: `user-service`, `account-service`, `transaction-service`, `logging-service`, and finally `bff-service`.
+
+5.  **Run the Frontend:**
+    Navigate to the frontend directory and start the development server:
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
+    The frontend will be available at `http://localhost:3000`
+
+## Frontend Application
+
+The Virtual Bank System now includes a modern, fully functional React frontend that provides:
+
+### Features
+- **User Authentication**: Secure registration and login
+- **Interactive Dashboard**: View all accounts, balances, and recent transactions
+- **Account Management**: Create savings and checking accounts
+- **Money Transfers**: Initiate and execute transfers between accounts
+- **Real-time Updates**: Refresh to see latest balances and transactions
+- **Responsive Design**: Works seamlessly on desktop and mobile
+
+### Quick Start
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+For detailed frontend documentation, see [frontend/README.md](frontend/README.md)
 
 ## API Documentation
 

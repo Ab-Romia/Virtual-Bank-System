@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+package-lock.json
+package.json
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build outputs
+target/
+dist/
+build/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
