@@ -17,6 +17,7 @@ This project is a fully functional, distributed virtual banking system designed 
 | **User Service** | Manages user registration, login, and profile information.                                              | 8081 |
 | **Account Service** | Manages user bank accounts, including creation, balance updates, and status changes.                    | 8082 |
 | **Transaction Service** | Handles the initiation and execution of financial transfers and provides transaction history.             | 8083 |
+| **AI Agent Service** | Intelligent assistant using OpenAI with RAG to help users with banking queries based on their data.   | 8084 |
 | **Logging Service** | A Kafka consumer that listens for log messages from all services and persists them to a database.     | -    |
 
 ## Technology Stack
@@ -51,21 +52,27 @@ This project is a fully functional, distributed virtual banking system designed 
    docker-compose up -d
    ```
 
-2. **Start Each Backend Service** (in separate terminals):
+2. **Set OpenAI API Key** (for AI Assistant):
+   ```bash
+   export OPENAI_API_KEY=your-api-key-here
+   ```
+
+3. **Start Each Backend Service** (in separate terminals):
    ```bash
    cd user-service && mvn spring-boot:run
    cd account-service && mvn spring-boot:run
    cd transaction-service && mvn spring-boot:run
    cd logging-service && mvn spring-boot:run
+   cd ai-agent-service && mvn spring-boot:run
    cd bff-service && mvn spring-boot:run
    ```
 
-3. **Start Frontend**:
+4. **Start Frontend**:
    ```bash
    cd frontend && npm install && npm run dev
    ```
 
-4. **Access Application**: http://localhost:3000
+5. **Access Application**: http://localhost:3000
 
 ## Getting Started
 
@@ -128,7 +135,14 @@ This project is a fully functional, distributed virtual banking system designed 
     mvn spring-boot:run
     ```
 
-    **Terminal 5 - BFF Service:**
+    **Terminal 5 - AI Agent Service:**
+    ```bash
+    cd ai-agent-service
+    export OPENAI_API_KEY=your-api-key-here
+    mvn spring-boot:run
+    ```
+
+    **Terminal 6 - BFF Service:**
     ```bash
     cd bff-service
     mvn spring-boot:run
@@ -147,9 +161,36 @@ This project is a fully functional, distributed virtual banking system designed 
     - User Service: http://localhost:8081/actuator/health
     - Account Service: http://localhost:8082/actuator/health
     - Transaction Service: http://localhost:8083/actuator/health
+    - AI Agent Service: http://localhost:8084/actuator/health
     - BFF Service: http://localhost:8080/actuator/health
     - Logging Service: http://localhost:8085/actuator/health
     - Frontend: http://localhost:3000
+
+## AI Banking Assistant
+
+The system includes an intelligent AI assistant powered by OpenAI that uses RAG (Retrieval-Augmented Generation) to provide personalized banking help.
+
+### Features
+- **Contextual Responses**: The AI knows your account balances, recent transactions, and profile information
+- **Natural Conversation**: Ask questions in plain English about your banking activities
+- **Real-time Data**: Responses are based on your current account data fetched in real-time
+- **Secure**: All data stays within your banking session
+
+### Setup
+1. Get an OpenAI API key from https://platform.openai.com/api-keys
+2. Set the environment variable before starting the AI Agent Service:
+   ```bash
+   export OPENAI_API_KEY=sk-your-key-here
+   ```
+3. Start the AI Agent Service (port 8084)
+4. Click the "AI Assistant" button in the dashboard to start chatting
+
+### Example Questions
+- "What's my current balance?"
+- "Show me my recent transactions"
+- "How many accounts do I have?"
+- "What type of accounts do I have?"
+- "Can you summarize my financial activity?"
 
 ## Frontend Application
 
@@ -160,6 +201,7 @@ The Virtual Bank System now includes a modern, fully functional React frontend t
 - **Interactive Dashboard**: View all accounts, balances, and recent transactions
 - **Account Management**: Create savings and checking accounts
 - **Money Transfers**: Initiate and execute transfers between accounts
+- **AI Banking Assistant**: Chat with an intelligent AI agent powered by OpenAI that understands your account data
 - **Real-time Updates**: Refresh to see latest balances and transactions
 - **Responsive Design**: Works seamlessly on desktop and mobile
 
