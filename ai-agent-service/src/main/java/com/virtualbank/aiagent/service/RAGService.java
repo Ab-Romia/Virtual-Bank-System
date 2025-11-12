@@ -54,17 +54,22 @@ public class RAGService {
             String response = webClient.get()
                     .uri(userServiceUrl + "/users/" + userId + "/profile")
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                            clientResponse -> clientResponse.createException())
                     .bodyToMono(String.class)
                     .block();
 
-            if (response != null) {
+            if (response != null && !response.isEmpty()) {
                 JsonNode userNode = objectMapper.readTree(response);
-                return String.format("Name: %s %s, Email: %s",
-                        userNode.get("firstName").asText(),
-                        userNode.get("lastName").asText(),
-                        userNode.get("email").asText());
+                if (userNode.has("firstName") && userNode.has("lastName") && userNode.has("email")) {
+                    return String.format("Name: %s %s, Email: %s",
+                            userNode.get("firstName").asText(),
+                            userNode.get("lastName").asText(),
+                            userNode.get("email").asText());
+                }
             }
         } catch (Exception e) {
+            System.err.println("Error fetching user info: " + e.getMessage());
             return "User profile unavailable";
         }
         return "No user information";
@@ -75,31 +80,42 @@ public class RAGService {
             String response = webClient.get()
                     .uri(accountServiceUrl + "/users/" + userId + "/accounts")
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                            clientResponse -> clientResponse.createException())
                     .bodyToMono(String.class)
                     .block();
 
-            if (response != null) {
+            if (response != null && !response.isEmpty()) {
                 JsonNode accountsNode = objectMapper.readTree(response);
+                if (!accountsNode.isArray()) {
+                    return "No accounts found";
+                }
+
                 List<String> accountDetails = new ArrayList<>();
 
                 for (JsonNode account : accountsNode) {
-                    String accountType = account.get("accountType").asText();
-                    String accountNumber = account.get("accountNumber").asText();
-                    double balance = account.get("balance").asDouble();
-                    String accountId = account.get("accountId").asText();
+                    if (account.has("accountType") && account.has("accountNumber") && account.has("balance")) {
+                        String accountType = account.get("accountType").asText();
+                        String accountNumber = account.get("accountNumber").asText();
+                        double balance = account.get("balance").asDouble();
+                        String accountId = account.has("accountId") ? account.get("accountId").asText() : "";
 
-                    accountDetails.add(String.format("%s Account (%s): Balance $%.2f",
-                            accountType, accountNumber, balance));
+                        accountDetails.add(String.format("%s Account (%s): Balance $%.2f",
+                                accountType, accountNumber, balance));
 
-                    String transactions = getRecentTransactions(accountId);
-                    if (!transactions.isEmpty()) {
-                        accountDetails.add("  Recent transactions: " + transactions);
+                        if (!accountId.isEmpty()) {
+                            String transactions = getRecentTransactions(accountId);
+                            if (!transactions.isEmpty()) {
+                                accountDetails.add("  Recent transactions: " + transactions);
+                            }
+                        }
                     }
                 }
 
                 return accountDetails.isEmpty() ? "No accounts found" : String.join("\n", accountDetails);
             }
         } catch (Exception e) {
+            System.err.println("Error fetching accounts info: " + e.getMessage());
             return "Account information unavailable";
         }
         return "No accounts";
@@ -110,23 +126,31 @@ public class RAGService {
             String response = webClient.get()
                     .uri(transactionServiceUrl + "/accounts/" + accountId + "/transactions")
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                            clientResponse -> clientResponse.createException())
                     .bodyToMono(String.class)
                     .block();
 
-            if (response != null) {
+            if (response != null && !response.isEmpty()) {
                 JsonNode transactionsNode = objectMapper.readTree(response);
+                if (!transactionsNode.isArray()) {
+                    return "";
+                }
+
                 List<String> transactionDetails = new ArrayList<>();
 
                 int count = 0;
                 for (JsonNode transaction : transactionsNode) {
                     if (count >= 3) break;
 
-                    double amount = transaction.get("amount").asDouble();
-                    String description = transaction.has("description") ?
-                            transaction.get("description").asText() : "Transfer";
+                    if (transaction.has("amount")) {
+                        double amount = transaction.get("amount").asDouble();
+                        String description = transaction.has("description") ?
+                                transaction.get("description").asText() : "Transfer";
 
-                    transactionDetails.add(String.format("$%.2f (%s)", amount, description));
-                    count++;
+                        transactionDetails.add(String.format("$%.2f (%s)", amount, description));
+                        count++;
+                    }
                 }
 
                 return transactionDetails.isEmpty() ? "" : String.join(", ", transactionDetails);

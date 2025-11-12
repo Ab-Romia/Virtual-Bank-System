@@ -29,6 +29,12 @@ public class AIAgentServiceClient {
                 .uri(aiAgentServiceUrl + "/chat")
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToMono(Map.class);
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        clientResponse -> {
+                            System.err.println("AI Agent Service error: " + clientResponse.statusCode());
+                            return clientResponse.createException();
+                        })
+                .bodyToMono(Map.class)
+                .doOnError(error -> System.err.println("Error calling AI Agent Service: " + error.getMessage()));
     }
 }
