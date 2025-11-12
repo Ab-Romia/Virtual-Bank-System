@@ -9,12 +9,14 @@ import {
   RefreshCw,
   Loader2,
   LogOut,
+  Bot,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { bffService, handleApiError } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import type { DashboardResponse } from '../types/api';
 import { formatCurrency } from '../utils/format';
+import AIChat from '../components/AIChat';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function Dashboard() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const fetchDashboard = async (isRefresh = false) => {
     if (!userId) {
@@ -86,6 +89,13 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowChat(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <Bot className="w-4 h-4" />
+                AI Assistant
+              </button>
               <button
                 onClick={() => fetchDashboard(true)}
                 disabled={refreshing}
@@ -233,6 +243,9 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      {/* AI Chat */}
+      {showChat && <AIChat onClose={() => setShowChat(false)} />}
     </div>
   );
 }
