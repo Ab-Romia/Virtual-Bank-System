@@ -26,8 +26,9 @@ This project is a fully functional, distributed virtual banking system designed 
 -   **Framework:** Spring Boot
 -   **Messaging:** Apache Kafka
 -   **API Gateway:** Designed for WSO2 API Manager
--   **Database:** H2 (in-memory, configurable to MySQL/PostgreSQL)
--   **Build Tool:** Maven / Gradle
+-   **Database:** PostgreSQL (4 separate databases)
+-   **Build Tool:** Maven
+-   **Security:** Spring Security with CORS support
 
 ### Frontend
 -   **Framework:** React 18 with TypeScript
@@ -39,47 +40,101 @@ This project is a fully functional, distributed virtual banking system designed 
 -   **UI Components:** Lucide React Icons
 -   **Notifications:** React Hot Toast
 
+## 🚀 Quick Start
+
+### Quick Commands
+
+1. **Start Infrastructure**:
+   ```bash
+   ./start-infrastructure.sh
+   # Or manually:
+   docker-compose up -d
+   ```
+
+2. **Start Each Backend Service** (in separate terminals):
+   ```bash
+   cd user-service && mvn spring-boot:run
+   cd account-service && mvn spring-boot:run
+   cd transaction-service && mvn spring-boot:run
+   cd logging-service && mvn spring-boot:run
+   cd bff-service && mvn spring-boot:run
+   ```
+
+3. **Start Frontend**:
+   ```bash
+   cd frontend && npm install && npm run dev
+   ```
+
+4. **Access Application**: http://localhost:3000
+
 ## Getting Started
 
 ### Prerequisites
 
 -   JDK 11 or higher
--   Maven or Gradle
--   Docker and Docker Compose (for running Kafka and other dependencies)
--   Node.js 18+ and npm (for frontend)
--   Postman or a similar API client for testing (optional)
+-   Maven 3.6+
+-   Docker and Docker Compose
+-   Node.js 18+ and npm
+-   Postman or similar API client (optional)
 
 ### Installation & Setup
 
 1.  **Clone the repository:**
     ```bash
     git clone <your-repository-url>
-    cd <your-repository-directory>
+    cd Virtual-Bank-System
     ```
 
-2.  **Start Dependencies (Kafka):**
-    A `docker-compose.yml` file should be used to easily start Kafka and Zookeeper.
+2.  **Start Infrastructure Services:**
+    Start PostgreSQL databases, Kafka, and Zookeeper using Docker Compose:
     ```bash
+    ./start-infrastructure.sh
+    # Or manually:
     docker-compose up -d
     ```
 
-3.  **Configure Microservices:**
-    Review the `application.properties` file in each microservice's `src/main/resources` directory. Ensure the service URLs (`user.service.url`, `account.service.url`, etc.) and Kafka server (`spring.kafka.producer.bootstrap-servers`) are correctly configured for your local environment (e.g., `localhost`).
+    This starts:
+    - 4 PostgreSQL databases (ports 5432-5435)
+    - Kafka (port 9092)
+    - Zookeeper (port 2181)
 
-4.  **Build and Run the Services:**
-    Open a separate terminal for each microservice (`user-service`, `account-service`, `transaction-service`, `bff-service`, `logging-service`).
+3.  **Build and Run Backend Services:**
 
-    Navigate to the root directory of each service and run:
+    **IMPORTANT**: Start services in this order and wait for each to fully start before starting the next.
+
+    Open 5 separate terminal windows:
+
+    **Terminal 1 - User Service:**
     ```bash
-    # Using Maven
+    cd user-service
     mvn spring-boot:run
-
-    # Or using Gradle
-    ./gradlew bootRun
     ```
-    Start the services in order: `user-service`, `account-service`, `transaction-service`, `logging-service`, and finally `bff-service`.
 
-5.  **Run the Frontend:**
+    **Terminal 2 - Account Service:**
+    ```bash
+    cd account-service
+    mvn spring-boot:run
+    ```
+
+    **Terminal 3 - Transaction Service:**
+    ```bash
+    cd transaction-service
+    mvn spring-boot:run
+    ```
+
+    **Terminal 4 - Logging Service:**
+    ```bash
+    cd logging-service
+    mvn spring-boot:run
+    ```
+
+    **Terminal 5 - BFF Service:**
+    ```bash
+    cd bff-service
+    mvn spring-boot:run
+    ```
+
+4.  **Run the Frontend:**
     Navigate to the frontend directory and start the development server:
     ```bash
     cd frontend
@@ -87,6 +142,14 @@ This project is a fully functional, distributed virtual banking system designed 
     npm run dev
     ```
     The frontend will be available at `http://localhost:3000`
+
+5.  **Verify System Health:**
+    - User Service: http://localhost:8081/actuator/health
+    - Account Service: http://localhost:8082/actuator/health
+    - Transaction Service: http://localhost:8083/actuator/health
+    - BFF Service: http://localhost:8080/actuator/health
+    - Logging Service: http://localhost:8085/actuator/health
+    - Frontend: http://localhost:3000
 
 ## Frontend Application
 
