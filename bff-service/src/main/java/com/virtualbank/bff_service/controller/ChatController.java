@@ -22,8 +22,17 @@ public class ChatController {
         String userId = request.get("userId");
         String message = request.get("message");
 
+        if (userId == null || userId.isEmpty() || message == null || message.isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(Map.of("message", "userId and message are required")));
+        }
+
         return aiAgentServiceClient.chat(userId, message)
                 .map(ResponseEntity::ok)
-                .onErrorReturn(ResponseEntity.internalServerError().build());
+                .onErrorResume(error -> {
+                    System.err.println("Error in chat endpoint: " + error.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(Map.of("message", "I'm sorry, I encountered an error. Please try again.")));
+                });
     }
 }

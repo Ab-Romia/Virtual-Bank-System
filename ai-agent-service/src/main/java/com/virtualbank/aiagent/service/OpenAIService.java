@@ -29,6 +29,7 @@ public class OpenAIService {
 
     public String chat(String systemPrompt, String userMessage) {
         if (apiKey == null || apiKey.isEmpty()) {
+            System.err.println("OpenAI API key is not configured");
             return "AI assistant is not configured. Please set OPENAI_API_KEY environment variable.";
         }
 
@@ -43,20 +44,31 @@ public class OpenAIService {
         request.setMax_tokens(500);
 
         try {
+            System.out.println("Sending request to OpenAI with model: " + model);
             OpenAIResponse response = webClient.post()
                     .uri(apiUrl)
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .bodyValue(request)
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                            clientResponse -> {
+                                System.err.println("OpenAI API error: " + clientResponse.statusCode());
+                                return clientResponse.createException();
+                            })
                     .bodyToMono(OpenAIResponse.class)
                     .block();
 
-            if (response != null && !response.getChoices().isEmpty()) {
-                return response.getChoices().get(0).getMessage().getContent();
+            if (response != null && response.getChoices() != null && !response.getChoices().isEmpty()) {
+                String content = response.getChoices().get(0).getMessage().getContent();
+                if (content != null && !content.isEmpty()) {
+                    return content;
+                }
             }
         } catch (Exception e) {
-            return "I'm having trouble connecting to the AI service. Please try again later.";
+            System.err.println("Error calling OpenAI API: " + e.getMessage());
+            e.printStackTrace();
+            return "I'm having trouble connecting to the AI service. Please try again later. Error: " + e.getMessage();
         }
 
         return "I couldn't generate a response. Please try again.";
