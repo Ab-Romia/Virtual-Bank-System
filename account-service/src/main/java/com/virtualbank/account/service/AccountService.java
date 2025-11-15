@@ -103,6 +103,27 @@ public class AccountService {
         return response;
     }
 
+    public AccountResponse getAccountByAccountNumber(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber);
+        if (account == null) {
+            throw new AccountNotFoundException("Account with number " + accountNumber + " not found");
+        }
+
+        // Convert to DTO
+        AccountResponse response = new AccountResponse();
+        response.setAccountId(account.getAccountId());
+        response.setUserId(account.getUserId());
+        response.setAccountNumber(account.getAccountNumber());
+        response.setAccountType(account.getAccountType());
+        response.setBalance(account.getBalance());
+        response.setStatus(account.getStatus());
+        response.setCreatedAt(account.getCreatedAt());
+        response.setUpdatedAt(account.getUpdatedAt());
+        response.setLastTransactionAt(account.getLastTransactionAt());
+
+        return response;
+    }
+
     public String generateUniqueAccountNumber() {
         String accountNumber;
         do {
