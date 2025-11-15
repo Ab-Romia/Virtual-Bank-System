@@ -108,6 +108,20 @@ public class AccountController {
         }
     }
 
+    @GetMapping("/accounts/number/{accountNumber}")
+    public ResponseEntity<AccountResponse> getAccountByNumber(
+            @PathVariable String accountNumber,
+            @RequestHeader(name = "APP-NAME", required = false, defaultValue = "UNKNOWN") String appName) {
+
+        String endpoint = "/accounts/number/" + accountNumber;
+        sendLogToKafka("Request", endpoint, "Get account with number: " + accountNumber, appName);
+
+        AccountResponse account = accountService.getAccountByAccountNumber(accountNumber);
+
+        sendLogToKafka("Response", endpoint, account, appName);
+        return ResponseEntity.ok(account);
+    }
+
     @GetMapping("/users/{userId}/accounts")
     public ResponseEntity<List<UserAccountsResponse>> findUserAccounts(
             @PathVariable String userId,

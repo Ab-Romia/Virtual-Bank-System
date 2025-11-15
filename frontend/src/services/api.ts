@@ -108,6 +108,11 @@ export const accountService = {
     const response = await accountApi.get<UserAccountsResponse[]>(`/users/${userId}/accounts`);
     return response.data;
   },
+
+  getAccountByNumber: async (accountNumber: string): Promise<AccountResponse> => {
+    const response = await accountApi.get<AccountResponse>(`/accounts/number/${accountNumber}`);
+    return response.data;
+  },
 };
 
 // Transaction Service APIs
