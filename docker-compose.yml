@@ -83,7 +83,7 @@ services:
 
   # Zookeeper for Kafka
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
+    image: confluentinc/cp-zookeeper:7.5.3
     container_name: virtual-bank-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -100,7 +100,7 @@ services:
 
   # Kafka
   kafka:
-    image: confluentinc/cp-kafka:7.5.0
+    image: confluentinc/cp-kafka:7.5.3
     container_name: virtual-bank-kafka
     depends_on:
       zookeeper:
