@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/chat")
+@RequestMapping("/bff/chat")
 public class ChatController {
 
     private final AIAgentServiceClient aiAgentServiceClient;
