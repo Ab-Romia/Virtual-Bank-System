@@ -1,6 +1,7 @@
 package com.virtualbank.bff_service.client;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -34,7 +35,7 @@ public class AIAgentServiceClient {
                             System.err.println("AI Agent Service error: " + clientResponse.statusCode());
                             return clientResponse.createException();
                         })
-                .bodyToMono(Map.class)
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .doOnError(error -> System.err.println("Error calling AI Agent Service: " + error.getMessage()));
     }
 }
