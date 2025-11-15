@@ -17,6 +17,9 @@ public class WebClientConfig {
     @Value("${account.service.url}")
     private String accountServiceUrl;
 
+    @Value("${ai.agent.service.url}")
+    private String aiAgentServiceUrl;
+
     @Bean
     public WebClient transactionServiceWebClient() {
         return WebClient.builder()
@@ -35,6 +38,13 @@ public class WebClientConfig {
     public WebClient accountServiceWebClient() {
         return WebClient.builder()
                 .baseUrl(accountServiceUrl)
+                .build();
+    }
+
+    @Bean
+    public WebClient aiAgentServiceWebClient() {
+        return WebClient.builder()
+                .baseUrl(aiAgentServiceUrl)
                 .build();
     }
 }
