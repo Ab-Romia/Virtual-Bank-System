@@ -1,6 +1,6 @@
 package com.virtualbank.bff_service.client;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,10 +13,7 @@ public class AIAgentServiceClient {
 
     private final WebClient webClient;
 
-    @Value("${ai.agent.service.url}")
-    private String aiAgentServiceUrl;
-
-    public AIAgentServiceClient(WebClient webClient) {
+    public AIAgentServiceClient(@Qualifier("aiAgentServiceWebClient") WebClient webClient) {
         this.webClient = webClient;
     }
 
@@ -27,7 +24,7 @@ public class AIAgentServiceClient {
         );
 
         return webClient.post()
-                .uri(aiAgentServiceUrl + "/chat")
+                .uri("/chat")
                 .bodyValue(requestBody)
                 .retrieve()
                 .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
