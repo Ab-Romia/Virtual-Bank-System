@@ -15,7 +15,7 @@ export default function Transfer() {
   const [accounts, setAccounts] = useState<UserAccountsResponse[]>([]);
   const [formData, setFormData] = useState({
     fromAccountId: '',
-    toAccountId: '',
+    toAccountNumber: '',  // Changed from toAccountId
     amount: 0,
     description: '',
   });
@@ -47,13 +47,8 @@ export default function Transfer() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.fromAccountId || !formData.toAccountId) {
-      toast.error('Please select both accounts');
-      return;
-    }
-
-    if (formData.fromAccountId === formData.toAccountId) {
-      toast.error('Cannot transfer to the same account');
+    if (!formData.fromAccountId || !formData.toAccountNumber) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -65,17 +60,27 @@ export default function Transfer() {
     setLoading(true);
 
     try {
-      // Step 1: Initiate transfer
+      // Step 1: Look up the recipient account by account number
+      const toAccount = await accountService.getAccountByNumber(formData.toAccountNumber);
+
+      // Check if trying to transfer to the same account
+      if (formData.fromAccountId === toAccount.accountId) {
+        toast.error('Cannot transfer to the same account');
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Initiate transfer
       const initiationResponse = await transactionService.initiateTransfer({
         fromAccountId: formData.fromAccountId,
-        toAccountId: formData.toAccountId,
+        toAccountId: toAccount.accountId,
         amount: formData.amount,
         description: formData.description,
       });
 
       toast.success('Transfer initiated!');
 
-      // Step 2: Execute transfer
+      // Step 3: Execute transfer
       const executionResponse = await transactionService.executeTransfer({
         transactionId: initiationResponse.transactionId,
       });
@@ -88,7 +93,7 @@ export default function Transfer() {
       }
     } catch (error) {
       const apiError = handleApiError(error);
-      toast.error(apiError.message || 'Transfer failed');
+      toast.error(apiError.message || 'Transfer failed. Please check the account number and try again.');
     } finally {
       setLoading(false);
     }
@@ -187,23 +192,23 @@ export default function Transfer() {
               )}
             </div>
 
-            {/* To Account ID */}
+            {/* To Account Number */}
             <div>
-              <label htmlFor="toAccountId" className="block text-sm font-medium text-gray-700 mb-2">
-                To Account ID
+              <label htmlFor="toAccountNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                Recipient Account Number
               </label>
               <input
-                id="toAccountId"
-                name="toAccountId"
+                id="toAccountNumber"
+                name="toAccountNumber"
                 type="text"
                 required
-                value={formData.toAccountId}
-                onChange={(e) => setFormData({ ...formData, toAccountId: e.target.value })}
+                value={formData.toAccountNumber}
+                onChange={(e) => setFormData({ ...formData, toAccountNumber: e.target.value })}
                 className="input-field"
-                placeholder="Enter recipient account ID (UUID)"
+                placeholder="Enter recipient account number (e.g., 1234567890)"
               />
               <p className="mt-2 text-sm text-gray-500">
-                Enter the UUID of the account you want to send money to
+                Enter the 10-digit account number of the recipient
               </p>
             </div>
 
