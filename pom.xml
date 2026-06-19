@@ -32,6 +32,7 @@
         <module>user-service</module>
         <module>account-service</module>
         <module>transaction-service</module>
+        <module>audit-service</module>
     </modules>
 
     <dependencyManagement>

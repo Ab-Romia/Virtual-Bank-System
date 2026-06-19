@@ -27,8 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Postgres comes from Testcontainers so Flyway runs against the real schema and
  * ddl-auto=validate confirms the entity matches. Kafka autoconfiguration is excluded
- * so no broker is needed; the shared AuditPublisher is filtered out of the scan
- * because audit is not on the auth path in Phase 1.
+ * so the test needs no broker.
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
