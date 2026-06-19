@@ -1,219 +1,140 @@
-# Virtual Bank System - Microservices Architecture
+# Virtual Bank System
 
-This project is a fully functional, distributed virtual banking system designed to demonstrate modern application architecture principles. It utilizes a microservices approach, with independent services for handling users, accounts, and transactions. The system also features a Backend for Frontend (BFF) service to aggregate data for client applications and asynchronous, centralized logging via Apache Kafka.
+A small bank built as event-driven microservices, with one goal that most demos
+skip: the money path is actually correct. A transfer cannot double-spend, cannot
+drive a balance negative, is idempotent under retries, and survives a service or
+broker restart without losing or inventing money. Everything else in the repo
+exists to support that claim and to make it easy to see how the parts fit
+together.
 
-## Core Architectural Concepts
+It is meant to be read as much as run. The code is small and the
+[architecture notes](docs/architecture.md) explain not just what each service
+does but why, including where consistency is hard and how the design handles it.
 
--   **Microservices:** The system is divided into loosely coupled, independently deployable services, each responsible for a specific business domain (Users, Accounts, Transactions, Logging). This promotes scalability, resilience, and maintainability.
--   **Backend for Frontend (BFF):** A dedicated BFF service acts as an aggregation layer for front-end clients. It orchestrates calls to multiple downstream microservices to create optimized, consolidated responses for the UI, reducing chattiness and simplifying the client-side logic.
--   **API Gateway Integration:** The architecture is designed to be fronted by an API Gateway like WSO2. The gateway would serve as the single entry point for all external traffic, handling routing, authentication (OAuth2, API Key), rate-limiting, and request transformation.
--   **Asynchronous Logging:** All microservices produce logs for requests and responses, sending them to a central Apache Kafka topic. A dedicated Logging service consumes these messages and persists them for centralized monitoring, auditing, and debugging.
+## What it is
 
-## Microservices Breakdown
+Five services behind a gateway, talking over REST at the edge and over Kafka in
+the core:
 
-| Service              | Description                                                                                             | Port |
-| -------------------- | ------------------------------------------------------------------------------------------------------- | ---- |
-| **BFF Service** | Aggregates data from other services to provide a consolidated view for the frontend (e.g., user dashboard). | 8080 |
-| **User Service** | Manages user registration, login, and profile information.                                              | 8081 |
-| **Account Service** | Manages user bank accounts, including creation, balance updates, and status changes.                    | 8082 |
-| **Transaction Service** | Handles the initiation and execution of financial transfers and provides transaction history.             | 8083 |
-| **AI Agent Service** | Intelligent assistant using OpenAI with RAG to help users with banking queries based on their data.   | 8084 |
-| **Logging Service** | A Kafka consumer that listens for log messages from all services and persists them to a database.     | -    |
+| Service | Responsibility |
+| --- | --- |
+| gateway | single entry point: validates the JWT, routes `/api/**`, aggregates the dashboard |
+| user-service | registration, login, RS256 JWT issuance, JWKS endpoint |
+| account-service | accounts and balances; applies a transfer atomically |
+| transaction-service | the transfer ledger; orchestrates a transfer and records its outcome |
+| audit-service | an event-sourced, queryable history of every transfer |
 
-## Technology Stack
+Backed by a single PostgreSQL server (a database per service) and a single KRaft
+Kafka broker. An optional assistant service (OpenRouter, free model) and an
+optional Tempo/Prometheus/Grafana stack can be turned on when you want them.
 
-### Backend
--   **Backend:** Java 11+
--   **Framework:** Spring Boot
--   **Messaging:** Apache Kafka
--   **API Gateway:** Designed for WSO2 API Manager
--   **Database:** PostgreSQL (4 separate databases)
--   **Build Tool:** Maven
--   **Security:** Spring Security with CORS support
+## Quick start
 
-### Frontend
--   **Framework:** React 18 with TypeScript
--   **Build Tool:** Vite
--   **State Management:** Zustand
--   **Routing:** React Router
--   **Styling:** Tailwind CSS
--   **HTTP Client:** Axios
--   **UI Components:** Lucide React Icons
--   **Notifications:** React Hot Toast
+Requires Docker (or podman) and Docker Compose. Nothing else needs to be
+installed; the services build from source in the images.
 
-## 🚀 Quick Start
-
-### Quick Commands
-
-1. **Start Infrastructure**:
-   ```bash
-   ./start-infrastructure.sh
-   # Or manually:
-   docker-compose up -d
-   ```
-
-2. **Set OpenAI API Key** (for AI Assistant):
-   ```bash
-   export OPENAI_API_KEY=your-api-key-here
-   ```
-
-3. **Start Each Backend Service** (in separate terminals):
-   ```bash
-   cd user-service && mvn spring-boot:run
-   cd account-service && mvn spring-boot:run
-   cd transaction-service && mvn spring-boot:run
-   cd logging-service && mvn spring-boot:run
-   cd ai-agent-service && mvn spring-boot:run
-   cd bff-service && mvn spring-boot:run
-   ```
-
-4. **Start Frontend**:
-   ```bash
-   cd frontend && npm install && npm run dev
-   ```
-
-5. **Access Application**: http://localhost:3000
-
-## Getting Started
-
-### Prerequisites
-
--   JDK 11 or higher
--   Maven 3.6+
--   Docker and Docker Compose
--   Node.js 18+ and npm
--   Postman or similar API client (optional)
-
-### Installation & Setup
-
-1.  **Clone the repository:**
-    ```bash
-    git clone <your-repository-url>
-    cd Virtual-Bank-System
-    ```
-
-2.  **Start Infrastructure Services:**
-    Start PostgreSQL databases, Kafka, and Zookeeper using Docker Compose:
-    ```bash
-    ./start-infrastructure.sh
-    # Or manually:
-    docker-compose up -d
-    ```
-
-    This starts:
-    - 4 PostgreSQL databases (ports 5432-5435)
-    - Kafka (port 9092)
-    - Zookeeper (port 2181)
-
-3.  **Build and Run Backend Services:**
-
-    **IMPORTANT**: Start services in this order and wait for each to fully start before starting the next.
-
-    Open 5 separate terminal windows:
-
-    **Terminal 1 - User Service:**
-    ```bash
-    cd user-service
-    mvn spring-boot:run
-    ```
-
-    **Terminal 2 - Account Service:**
-    ```bash
-    cd account-service
-    mvn spring-boot:run
-    ```
-
-    **Terminal 3 - Transaction Service:**
-    ```bash
-    cd transaction-service
-    mvn spring-boot:run
-    ```
-
-    **Terminal 4 - Logging Service:**
-    ```bash
-    cd logging-service
-    mvn spring-boot:run
-    ```
-
-    **Terminal 5 - AI Agent Service:**
-    ```bash
-    cd ai-agent-service
-    export OPENAI_API_KEY=your-api-key-here
-    mvn spring-boot:run
-    ```
-
-    **Terminal 6 - BFF Service:**
-    ```bash
-    cd bff-service
-    mvn spring-boot:run
-    ```
-
-4.  **Run the Frontend:**
-    Navigate to the frontend directory and start the development server:
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
-    The frontend will be available at `http://localhost:3000`
-
-5.  **Verify System Health:**
-    - User Service: http://localhost:8081/actuator/health
-    - Account Service: http://localhost:8082/actuator/health
-    - Transaction Service: http://localhost:8083/actuator/health
-    - AI Agent Service: http://localhost:8084/actuator/health
-    - BFF Service: http://localhost:8080/actuator/health
-    - Logging Service: http://localhost:8085/actuator/health
-    - Frontend: http://localhost:3000
-
-## AI Banking Assistant
-
-The system includes an intelligent AI assistant powered by OpenAI that uses RAG (Retrieval-Augmented Generation) to provide personalized banking help.
-
-### Features
-- **Contextual Responses**: The AI knows your account balances, recent transactions, and profile information
-- **Natural Conversation**: Ask questions in plain English about your banking activities
-- **Real-time Data**: Responses are based on your current account data fetched in real-time
-- **Secure**: All data stays within your banking session
-
-### Setup
-1. Get an OpenAI API key from https://platform.openai.com/api-keys
-2. Set the environment variable before starting the AI Agent Service:
-   ```bash
-   export OPENAI_API_KEY=sk-your-key-here
-   ```
-3. Start the AI Agent Service (port 8084)
-4. Click the "AI Assistant" button in the dashboard to start chatting
-
-### Example Questions
-- "What's my current balance?"
-- "Show me my recent transactions"
-- "How many accounts do I have?"
-- "What type of accounts do I have?"
-- "Can you summarize my financial activity?"
-
-## Frontend Application
-
-The Virtual Bank System now includes a modern, fully functional React frontend that provides:
-
-### Features
-- **User Authentication**: Secure registration and login
-- **Interactive Dashboard**: View all accounts, balances, and recent transactions
-- **Account Management**: Create savings and checking accounts
-- **Money Transfers**: Initiate and execute transfers between accounts
-- **AI Banking Assistant**: Chat with an intelligent AI agent powered by OpenAI that understands your account data
-- **Real-time Updates**: Refresh to see latest balances and transactions
-- **Responsive Design**: Works seamlessly on desktop and mobile
-
-### Quick Start
 ```bash
-cd frontend
-npm install
-npm run dev
+git clone https://github.com/Ab-Romia/Virtual-Bank-System.git
+cd Virtual-Bank-System
+cp .env.example .env        # adjust the Postgres password for anything real
+docker compose up --build   # gateway on http://localhost:8080
 ```
 
-For detailed frontend documentation, see [frontend/README.md](frontend/README.md)
+Then walk through a transfer end to end:
 
-## API Documentation
+```bash
+# register and log in
+curl -s -XPOST localhost:8080/api/auth/register -H 'Content-Type: application/json' \
+  -d '{"username":"alice","email":"a@example.com","password":"pw123456","fullName":"Alice"}'
+TOKEN=$(curl -s -XPOST localhost:8080/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"username":"alice","password":"pw123456"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+AUTH="Authorization: Bearer $TOKEN"
 
-The complete API specification is available in the `openapi.yaml` file in the root of this repository. This file details all available endpoints, request/response schemas, and security requirements. You can use tools like the [Swagger Editor](https://editor.swagger.io/) to view and interact with the documentation.
+# open two accounts, fund one
+A=$(curl -s -XPOST localhost:8080/api/accounts -H "$AUTH" -H 'Content-Type: application/json' -d '{"type":"CHECKING","currency":"USD"}' | sed 's/.*"id":"\([^"]*\)".*/\1/')
+B=$(curl -s -XPOST localhost:8080/api/accounts -H "$AUTH" -H 'Content-Type: application/json' -d '{"type":"SAVINGS","currency":"USD"}'  | sed 's/.*"id":"\([^"]*\)".*/\1/')
+curl -s -XPOST localhost:8080/api/accounts/$A/deposit -H "$AUTH" -H 'Content-Type: application/json' -d '{"amount":100}' >/dev/null
+
+# transfer 30, then read the result and the audit trail
+TX=$(curl -s -XPOST localhost:8080/api/transfers -H "$AUTH" -H 'Content-Type: application/json' -H 'Idempotency-Key: demo-1' \
+  -d "{\"fromAccountId\":\"$A\",\"toAccountId\":\"$B\",\"amount\":30,\"currency\":\"USD\"}" | sed 's/.*"transferId":"\([^"]*\)".*/\1/')
+curl -s localhost:8080/api/transfers/$TX -H "$AUTH"
+curl -s localhost:8080/api/audit/transfers/$TX -H "$AUTH"
+```
+
+`requests.http` has the same flow if you prefer an HTTP client.
+
+## How a transfer works
+
+Starting a transfer returns `202 Accepted` immediately; the money moves on the
+event path and the client polls for the result.
+
+1. transaction-service writes a `PENDING` transfer and a `TransferRequested`
+   event to its outbox in one transaction, then returns the transfer id.
+2. A relay forwards the outbox row to Kafka. account-service consumes it, locks
+   both accounts, validates, and applies the debit and credit in one atomic,
+   idempotent local transaction, then emits the result through its own outbox.
+3. transaction-service consumes the result and marks the transfer `COMPLETED` or
+   `FAILED`. audit-service records every step independently.
+
+The correctness rests on three things: a transactional outbox so events are
+never lost or published without their state change; idempotent consumers keyed
+by the transfer id so at-least-once delivery never moves money twice; and
+pessimistic row locks plus a `CHECK (balance >= 0)` constraint so concurrent
+transfers cannot double-spend. See [docs/architecture.md](docs/architecture.md)
+for the diagrams and the full reasoning, including an honest note on where the
+distributed tracing stops.
+
+## Tech stack
+
+Java 21 (virtual threads), Spring Boot 3.5, Spring Cloud Gateway, Spring Kafka on
+a single KRaft broker, Spring Security as an OAuth2 resource server (RS256 JWT +
+JWKS), Spring Data JPA with Flyway, PostgreSQL, Micrometer Tracing with
+OpenTelemetry, and Testcontainers. The optional assistant uses Spring AI over
+OpenRouter with a local embedding model for retrieval.
+
+## Optional profiles
+
+Tracing, metrics, and dashboards (Tempo, Prometheus, Grafana on
+http://localhost:3000):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d --build
+```
+
+The banking assistant (needs a free OpenRouter API key in `.env`):
+
+```bash
+OPENROUTER_API_KEY=... docker compose --profile ai up -d --build
+# POST /api/assistant/chat {"message":"what is my balance?"}
+```
+
+## Tests
+
+`./mvnw verify` runs the unit and Testcontainers integration tests, including the
+concurrency test that fires twenty simultaneous transfers at one account and
+proves no double-spend, and the saga, idempotency, and audit tests.
+
+## Limitations and roadmap
+
+This is a teaching reference, not a production bank. Deliberately out of scope
+for now: multi-currency conversion, real payment rails, refresh-token rotation, a
+running gateway rate limiter (it needs a shared store), and joining the HTTP
+request and the asynchronous publish into a single trace (the outbox relay
+decouples them on purpose). Each is a reasonable next step rather than a missing
+piece.
+
+## Layout
+
+```
+vbank-common/          shared events, the outbox, security and error handling (a Spring Boot starter)
+gateway/               Spring Cloud Gateway
+user-service/          identity and JWT issuance
+account-service/       balances and the atomic transfer
+transaction-service/   the transfer ledger and orchestration
+audit-service/         event-sourced audit log
+ai-assistant-service/  optional Spring AI assistant
+frontend/              React single-page app
+docs/                  architecture notes and diagrams
+infra/                 Postgres init, Tempo, Prometheus, Grafana config
+```
