@@ -1,32 +1,20 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
-// https://vite.dev/config/
+// The gateway owns CORS, so the dev server talks to it directly over
+// VITE_API_BASE rather than proxying. Port 5173 matches the origin the
+// gateway allows.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
-    port: 3000,
-    proxy: {
-      '/api/bff': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/bff/, '/bff'),
-      },
-      '/api/users': {
-        target: 'http://localhost:8081',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/users/, '/users'),
-      },
-      '/api/accounts': {
-        target: 'http://localhost:8082',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/accounts/, ''),
-      },
-      '/api/transactions': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/transactions/, ''),
-      },
-    },
+    port: 5173,
   },
-})
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    css: true,
+  },
+});
