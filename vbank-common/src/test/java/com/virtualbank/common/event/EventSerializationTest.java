@@ -9,40 +9,39 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The saga depends on commands and events surviving a JSON round-trip through
- * their sealed interface. If the polymorphic type discriminator breaks, the
- * whole transfer flow breaks, so this is a first-class contract test.
+ * The saga depends on the request and result messages surviving a JSON round
+ * trip, including the polymorphic result type. If that breaks, transfers break,
+ * so this is a first-class contract test.
  */
 class EventSerializationTest {
 
     private final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
 
     @Test
-    void debitRequestedRoundTripsThroughTheCommandInterface() throws Exception {
-        TransferCommand command = new TransferCommand.DebitRequested(
-                "evt-1", "tx-1", "acc-from", "acc-to",
+    void transferRequestedRoundTrips() throws Exception {
+        TransferRequested request = new TransferRequested(
+                "tx-1", "user-1", "acc-from", "acc-to",
                 new BigDecimal("25.00"), "USD", Instant.parse("2026-06-19T10:00:00Z"));
 
-        String json = mapper.writeValueAsString(command);
-        assertThat(json).contains("\"type\":\"DebitRequested\"");
+        TransferRequested back = mapper.readValue(mapper.writeValueAsString(request), TransferRequested.class);
 
-        TransferCommand back = mapper.readValue(json, TransferCommand.class);
-        assertThat(back).isInstanceOf(TransferCommand.DebitRequested.class);
         assertThat(back.transferId()).isEqualTo("tx-1");
-        assertThat(((TransferCommand.DebitRequested) back).amount()).isEqualByComparingTo("25.00");
+        assertThat(back.initiatorId()).isEqualTo("user-1");
+        assertThat(back.amount()).isEqualByComparingTo("25.00");
     }
 
     @Test
-    void creditFailedRoundTripsThroughTheEventInterface() throws Exception {
-        TransferEvent event = new TransferEvent.CreditFailed(
-                "evt-2", "tx-1", "acc-to", "DESTINATION_INACTIVE",
-                Instant.parse("2026-06-19T10:00:01Z"));
+    void transferResultsRoundTripThroughTheSealedInterface() throws Exception {
+        TransferEvent completed = new TransferEvent.TransferCompleted("tx-1", Instant.parse("2026-06-19T10:00:01Z"));
+        String completedJson = mapper.writeValueAsString(completed);
+        assertThat(completedJson).contains("\"type\":\"TransferCompleted\"");
+        assertThat(mapper.readValue(completedJson, TransferEvent.class))
+                .isInstanceOf(TransferEvent.TransferCompleted.class);
 
-        String json = mapper.writeValueAsString(event);
-        assertThat(json).contains("\"type\":\"CreditFailed\"");
-
-        TransferEvent back = mapper.readValue(json, TransferEvent.class);
-        assertThat(back).isInstanceOf(TransferEvent.CreditFailed.class);
-        assertThat(((TransferEvent.CreditFailed) back).reason()).isEqualTo("DESTINATION_INACTIVE");
+        TransferEvent failed = new TransferEvent.TransferFailed("tx-1", "INSUFFICIENT_FUNDS",
+                Instant.parse("2026-06-19T10:00:02Z"));
+        TransferEvent back = mapper.readValue(mapper.writeValueAsString(failed), TransferEvent.class);
+        assertThat(back).isInstanceOf(TransferEvent.TransferFailed.class);
+        assertThat(((TransferEvent.TransferFailed) back).reason()).isEqualTo("INSUFFICIENT_FUNDS");
     }
 }
