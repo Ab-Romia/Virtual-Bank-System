@@ -26,7 +26,7 @@ spring:
               filters:
                 - StripPrefix=1
 
-            # Account-service routes (service may not exist yet).
+            # Accounts and balances.
             - id: accounts
               uri: ${ACCOUNT_SERVICE_URI:http://localhost:8082}
               predicates:
@@ -34,11 +34,19 @@ spring:
               filters:
                 - StripPrefix=1
 
-            # Transaction-service transfer routes (service may not exist yet).
+            # Transfers and the transfer ledger.
             - id: transfers
               uri: ${TRANSACTION_SERVICE_URI:http://localhost:8083}
               predicates:
                 - Path=/api/transfers/**
+              filters:
+                - StripPrefix=1
+
+            # Audit history.
+            - id: audit
+              uri: ${AUDIT_SERVICE_URI:http://localhost:8085}
+              predicates:
+                - Path=/api/audit/**
               filters:
                 - StripPrefix=1
   security:

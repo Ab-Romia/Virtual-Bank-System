@@ -1,8 +1,10 @@
 # Virtual Bank System: one file, three profiles.
-#   docker compose up                                   -> core stack (db, broker, services)
-#   docker compose --profile observability up            -> + tracing/metrics/dashboards
-#   docker compose --profile ai up                       -> + AI assistant and its vector store
-# Services with no `profiles:` key are the core set and always start.
+#   docker compose up --build                              -> core stack (db, broker, services)
+#   docker compose --profile observability up --build       -> + tracing/metrics/dashboards
+#   docker compose --profile ai up --build                  -> + AI assistant and its vector store
+# Services with no `profiles:` key are the core set and always start. Only the
+# gateway is published to the host; the services talk to each other on the
+# internal network.
 
 name: virtual-bank
 
@@ -52,8 +54,104 @@ services:
       timeout: 10s
       retries: 10
 
-  # ---- Application services are added per build phase (gateway, user,
-  #      account, transaction, audit) once their Dockerfiles exist. -----------
+  # ---- Application services ------------------------------------------------
+  user-service:
+    build:
+      context: .
+      args:
+        MODULE: user-service
+    container_name: vbank-user-service
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-vbank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vbank_dev_pw}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  account-service:
+    build:
+      context: .
+      args:
+        MODULE: account-service
+    container_name: vbank-account-service
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-vbank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vbank_dev_pw}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWKS_URI: http://user-service:8081/.well-known/jwks.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  transaction-service:
+    build:
+      context: .
+      args:
+        MODULE: transaction-service
+    container_name: vbank-transaction-service
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-vbank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vbank_dev_pw}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWKS_URI: http://user-service:8081/.well-known/jwks.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  audit-service:
+    build:
+      context: .
+      args:
+        MODULE: audit-service
+    container_name: vbank-audit-service
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-vbank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vbank_dev_pw}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWKS_URI: http://user-service:8081/.well-known/jwks.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      args:
+        MODULE: gateway
+    container_name: vbank-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      USER_SERVICE_URI: http://user-service:8081
+      ACCOUNT_SERVICE_URI: http://account-service:8082
+      TRANSACTION_SERVICE_URI: http://transaction-service:8083
+      AUDIT_SERVICE_URI: http://audit-service:8085
+      JWKS_URI: http://user-service:8081/.well-known/jwks.json
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+    depends_on:
+      - user-service
+      - account-service
+      - transaction-service
+      - audit-service
 
 volumes:
   postgres-data:

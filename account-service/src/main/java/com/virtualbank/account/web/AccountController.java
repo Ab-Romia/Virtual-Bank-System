@@ -3,6 +3,7 @@ package com.virtualbank.account.web;
 import com.virtualbank.account.AccountService;
 import com.virtualbank.account.web.dto.AccountResponse;
 import com.virtualbank.account.web.dto.CreateAccountRequest;
+import com.virtualbank.account.web.dto.DepositRequest;
 import com.virtualbank.common.security.CurrentUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -47,5 +48,10 @@ public class AccountController {
     @PostMapping("/{id}/freeze")
     public AccountResponse freeze(@PathVariable String id) {
         return AccountResponse.from(accountService.freeze(id, CurrentUser.requireId()));
+    }
+
+    @PostMapping("/{id}/deposit")
+    public AccountResponse deposit(@PathVariable String id, @Valid @RequestBody DepositRequest request) {
+        return AccountResponse.from(accountService.deposit(id, CurrentUser.requireId(), request.amount()));
     }
 }

@@ -65,6 +65,17 @@ public class AccountService {
         return account;
     }
 
+    /** Adds funds to one of the caller's accounts. Stands in for an external deposit. */
+    @Transactional
+    public Account deposit(String accountId, String ownerId, BigDecimal amount) {
+        Account account = requireOwned(accountId, ownerId);
+        if (!account.isActive()) {
+            throw ApiException.badRequest("Cannot deposit into a frozen account");
+        }
+        account.credit(amount, Instant.now(clock));
+        return account;
+    }
+
     private Account requireOwned(String accountId, String ownerId) {
         Account account = accounts.findById(accountId)
                 .orElseThrow(() -> ApiException.notFound("Account not found"));
