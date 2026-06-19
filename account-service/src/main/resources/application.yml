@@ -19,6 +19,12 @@ spring:
     enabled: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+    # Observe producer sends and listener receives so the trace context rides
+    # in the record headers and the trace continues across the broker.
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
     consumer:
       group-id: account-service
       auto-offset-reset: earliest
@@ -46,3 +52,11 @@ management:
     health:
       probes:
         enabled: true
+  # Tracing is off by default so the lean core run exports nothing; the
+  # observability override sets the sampling probability and OTLP endpoint.
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING:0.0}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}

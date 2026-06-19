@@ -2,6 +2,7 @@ package com.virtualbank.account.config;
 
 import com.virtualbank.common.messaging.Topics;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,11 +56,16 @@ public class KafkaConfig {
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
             ConsumerFactory<String, String> consumerFactory,
-            DefaultErrorHandler transferErrorHandler) {
+            DefaultErrorHandler transferErrorHandler,
+            @Value("${spring.kafka.listener.observation-enabled:false}") boolean observationEnabled) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.setCommonErrorHandler(transferErrorHandler);
+        // This factory replaces Boot's auto-configured one, so the listener
+        // observation property has to be applied here for the consumer span to
+        // continue the trace the producer started.
+        factory.getContainerProperties().setObservationEnabled(observationEnabled);
         return factory;
     }
 }

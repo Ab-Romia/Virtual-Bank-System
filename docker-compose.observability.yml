@@ -1,0 +1,63 @@
+# Observability override: adds Tempo, Prometheus, and Grafana, and turns on tracing
+# in the five services. Layer it on top of the core stack:
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d --build
+# Without this file the core run exports no traces (TRACING_SAMPLING defaults to 0.0).
+
+services:
+  tempo:
+    image: grafana/tempo:latest
+    container_name: vbank-tempo
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      # :Z relabels for SELinux (Fedora/podman); without it the container cannot read the config.
+      - ./infra/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro,Z
+    ports:
+      - "3200:3200"   # Tempo HTTP API (trace search and lookup)
+      - "4318:4318"   # OTLP HTTP receiver
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vbank-prometheus
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vbank-grafana
+    environment:
+      # Anonymous viewing keeps the demo one click away; not a production posture.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro,Z
+    ports:
+      - "3000:3000"
+
+  # Turn tracing on for the five services and point them at Tempo's OTLP receiver.
+  user-service:
+    environment:
+      TRACING_SAMPLING: "1.0"
+      OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
+
+  account-service:
+    environment:
+      TRACING_SAMPLING: "1.0"
+      OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
+
+  transaction-service:
+    environment:
+      TRACING_SAMPLING: "1.0"
+      OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
+
+  audit-service:
+    environment:
+      TRACING_SAMPLING: "1.0"
+      OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
+
+  gateway:
+    environment:
+      TRACING_SAMPLING: "1.0"
+      OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces

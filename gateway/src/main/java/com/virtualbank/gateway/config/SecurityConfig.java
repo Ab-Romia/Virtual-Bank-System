@@ -30,6 +30,8 @@ public class SecurityConfig {
                         .pathMatchers("/api/auth/**").permitAll()
                         // Public: health probes for container orchestration.
                         .pathMatchers("/actuator/health/**").permitAll()
+                        // Public: Prometheus scrapes the metrics endpoint on the internal network.
+                        .pathMatchers("/actuator/prometheus").permitAll()
                         // CORS preflight requests carry no credentials.
                         .pathMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
                         .anyExchange().authenticated())

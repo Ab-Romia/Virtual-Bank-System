@@ -1,0 +1,17 @@
+apiVersion: 1
+
+datasources:
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: true
+    jsonData:
+      # Jump from a trace to the matching metrics in Prometheus.
+      tracesToMetrics:
+        datasourceUid: prometheus
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090

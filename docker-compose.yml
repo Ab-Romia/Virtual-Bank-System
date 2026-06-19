@@ -1,10 +1,10 @@
-# Virtual Bank System: one file, three profiles.
-#   docker compose up --build                              -> core stack (db, broker, services)
-#   docker compose --profile observability up --build       -> + tracing/metrics/dashboards
-#   docker compose --profile ai up --build                  -> + AI assistant and its vector store
-# Services with no `profiles:` key are the core set and always start. Only the
-# gateway is published to the host; the services talk to each other on the
-# internal network.
+# Virtual Bank System core stack: database, broker, and the five services.
+#   docker compose up --build                                                          -> core stack
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d --build  -> + tracing/metrics/dashboards
+# The observability override is a separate file rather than a profile because a
+# profile cannot inject the tracing environment variables into the core services.
+# Only the gateway is published to the host; the services talk to each other on
+# the internal network.
 
 name: virtual-bank
 

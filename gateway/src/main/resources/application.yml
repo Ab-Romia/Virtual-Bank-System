@@ -69,3 +69,11 @@ management:
     metrics:
       export:
         enabled: true
+  # Tracing is off by default so the lean core run exports nothing; the
+  # observability override sets the sampling probability and OTLP endpoint.
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING:0.0}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
