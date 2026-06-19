@@ -2,8 +2,6 @@ package com.virtualbank.common.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -11,20 +9,15 @@ import java.time.Instant;
 /**
  * Appends an event to the outbox. Call this inside the same transaction as the
  * state change it describes; the {@link OutboxRelay} publishes it afterwards.
+ * Wired by VbankMessagingAutoConfiguration when vbank.outbox.enabled is true.
  */
-@Component
-@ConditionalOnProperty(prefix = "vbank.outbox", name = "enabled", havingValue = "true")
 public class OutboxAppender {
 
     private final OutboxRepository repository;
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
-    public OutboxAppender(OutboxRepository repository, ObjectMapper objectMapper) {
-        this(repository, objectMapper, Clock.systemUTC());
-    }
-
-    OutboxAppender(OutboxRepository repository, ObjectMapper objectMapper, Clock clock) {
+    public OutboxAppender(OutboxRepository repository, ObjectMapper objectMapper, Clock clock) {
         this.repository = repository;
         this.objectMapper = objectMapper;
         this.clock = clock;

@@ -1,0 +1,9 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Dummy JWKS uri for the context-load test. The reactive JWT decoder
+          # fetches keys lazily on first token validation, so booting the context
+          # does not require user-service to be running.
+          jwk-set-uri: http://localhost:0/.well-known/jwks.json

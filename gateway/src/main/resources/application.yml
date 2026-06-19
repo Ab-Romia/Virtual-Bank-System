@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            # Authentication endpoints (register, login). Public, no token required.
+            - id: auth
+              uri: ${USER_SERVICE_URI:http://localhost:8081}
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                # Drop the leading /api segment so user-service sees /auth/**.
+                - StripPrefix=1
+
+            # User profile and management endpoints.
+            - id: users
+              uri: ${USER_SERVICE_URI:http://localhost:8081}
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - StripPrefix=1
+
+            # Account-service routes (service may not exist yet).
+            - id: accounts
+              uri: ${ACCOUNT_SERVICE_URI:http://localhost:8082}
+              predicates:
+                - Path=/api/accounts/**
+              filters:
+                - StripPrefix=1
+
+            # Transaction-service transfer routes (service may not exist yet).
+            - id: transfers
+              uri: ${TRANSACTION_SERVICE_URI:http://localhost:8083}
+              predicates:
+                - Path=/api/transfers/**
+              filters:
+                - StripPrefix=1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # RS256 tokens are validated against user-service's JWKS.
+          jwk-set-uri: ${JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true

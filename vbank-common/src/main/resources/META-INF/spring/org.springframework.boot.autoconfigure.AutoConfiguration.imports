@@ -1,0 +1,4 @@
+com.virtualbank.common.autoconfigure.VbankCommonAutoConfiguration
+com.virtualbank.common.autoconfigure.VbankWebAutoConfiguration
+com.virtualbank.common.autoconfigure.VbankSecurityAutoConfiguration
+com.virtualbank.common.autoconfigure.VbankMessagingAutoConfiguration

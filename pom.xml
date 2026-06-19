@@ -28,6 +28,8 @@
 
     <modules>
         <module>vbank-common</module>
+        <module>gateway</module>
+        <module>user-service</module>
     </modules>
 
     <dependencyManagement>
