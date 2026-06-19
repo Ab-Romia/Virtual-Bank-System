@@ -1,134 +1,59 @@
-version: '3.8'
+# Virtual Bank System: one file, three profiles.
+#   docker compose up                                   -> core stack (db, broker, services)
+#   docker compose --profile observability up            -> + tracing/metrics/dashboards
+#   docker compose --profile ai up                       -> + AI assistant and its vector store
+# Services with no `profiles:` key are the core set and always start.
+
+name: virtual-bank
 
 services:
-  # PostgreSQL for User Service
-  postgres-user:
-    image: postgres:15-alpine
-    container_name: virtual-bank-user-db
+  # ---- Core infrastructure -------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: vbank-postgres
     environment:
-      POSTGRES_DB: virtual_bank_user_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: REMOVED
+      POSTGRES_USER: ${POSTGRES_USER:-vbank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vbank_dev_pw}
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
-      - postgres-user-data:/var/lib/postgresql/data
-    networks:
-      - virtual-bank-network
+      - postgres-data:/var/lib/postgresql/data
+      # :Z relabels for SELinux (Fedora/podman); without it the container cannot read the script.
+      - ./infra/postgres:/docker-entrypoint-initdb.d:ro,Z
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vbank} -d postgres"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  # PostgreSQL for Account Service
-  postgres-account:
-    image: postgres:15-alpine
-    container_name: virtual-bank-account-db
-    environment:
-      POSTGRES_DB: virtual_bank_account_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: REMOVED
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres-account-data:/var/lib/postgresql/data
-    networks:
-      - virtual-bank-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # PostgreSQL for Transaction Service
-  postgres-transaction:
-    image: postgres:15-alpine
-    container_name: virtual-bank-transaction-db
-    environment:
-      POSTGRES_DB: virtual_bank_transaction_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: REMOVED
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres-transaction-data:/var/lib/postgresql/data
-    networks:
-      - virtual-bank-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # PostgreSQL for Logging Service
-  postgres-logging:
-    image: postgres:15-alpine
-    container_name: virtual-bank-logging-db
-    environment:
-      POSTGRES_DB: virtual_bank_logging_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: REMOVED
-    ports:
-      - "5435:5432"
-    volumes:
-      - postgres-logging-data:/var/lib/postgresql/data
-    networks:
-      - virtual-bank-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Zookeeper for Kafka
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.3
-    container_name: virtual-bank-zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-    networks:
-      - virtual-bank-network
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Kafka
   kafka:
-    image: confluentinc/cp-kafka:7.5.3
-    container_name: virtual-bank-kafka
-    depends_on:
-      zookeeper:
-        condition: service_healthy
+    image: apache/kafka:3.9.0
+    container_name: vbank-kafka
     ports:
-      - "9092:9092"
+      - "9094:9094"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    networks:
-      - virtual-bank-network
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 10s
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1 || exit 1"]
+      interval: 15s
       timeout: 10s
-      retries: 5
+      retries: 10
 
-networks:
-  virtual-bank-network:
-    driver: bridge
+  # ---- Application services are added per build phase (gateway, user,
+  #      account, transaction, audit) once their Dockerfiles exist. -----------
 
 volumes:
-  postgres-user-data:
-  postgres-account-data:
-  postgres-transaction-data:
-  postgres-logging-data:
+  postgres-data:
