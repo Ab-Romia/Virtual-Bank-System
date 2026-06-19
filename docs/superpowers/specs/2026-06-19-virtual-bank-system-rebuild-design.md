@@ -47,9 +47,10 @@ stays with the owner.
 1. Event model: true event-driven saga. The transfer becomes a real
    orchestration saga over Kafka with a transactional outbox, compensation, and
    a dead-letter topic.
-2. AI assistant: rebuilt for real and on-brand. Spring AI plus Claude, identity
-   from the JWT, tool-calling for live account data, and pgvector RAG over a
-   bank-policy corpus so "retrieval" is true.
+2. AI assistant: rebuilt for real and on-brand. Spring AI talking to OpenRouter
+   (a free model, OpenAI-compatible API), identity from the JWT, tool-calling for
+   live account data, and pgvector RAG over a bank-policy corpus so "retrieval"
+   is true. Embeddings run via a small local model so no paid key is ever needed.
 3. Observability and testing: standard. Micrometer Tracing plus OpenTelemetry to
    Tempo, Prometheus, and Grafana; Testcontainers integration tests; a
    concurrency test and a chaos test.
@@ -221,8 +222,16 @@ Proof artifacts:
 
 ## AI assistant (rebuilt real)
 
-- Spring AI `ChatClient` plus Claude (a current Claude model; graceful
-  degradation if `ANTHROPIC_API_KEY` is absent).
+- Spring AI `ChatClient` over OpenRouter (the Spring AI OpenAI client pointed at
+  `https://openrouter.ai/api/v1`), using a free, configurable model (for example
+  a free Llama or Qwen instruct model that supports tool-calling). The model id
+  is an environment variable so it is easy to swap. Graceful degradation if
+  `OPENROUTER_API_KEY` is absent (the assistant returns a clear "AI is not
+  configured" message rather than crashing). Do not use Anthropic or OpenAI
+  directly; the demo must run free.
+- Embeddings run via a small local model (Spring AI in-process transformers, for
+  example all-MiniLM-L6-v2) because OpenRouter does not expose an embeddings API.
+  This keeps RAG fully free with no embeddings key.
 - Identity from the JWT, never a client-supplied user id.
 - Tool-calling (function calling): read-only tools such as `getAccounts`,
   `getRecentTransactions`, and `getBalance` scoped to the authenticated user, hit

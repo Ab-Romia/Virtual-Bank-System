@@ -6,7 +6,7 @@
 
 **Architecture:** A multi-module Maven monorepo. Five core Spring Boot services (gateway, user, account, transaction, audit) plus one optional AI service, sharing a `vbank-common` module. A single Postgres server with a database per service and a single KRaft Kafka broker, all orchestrated by one `docker-compose.yml` with profiles. The transfer is an orchestration saga over Kafka using the transactional outbox pattern with compensation and dead-letter queues.
 
-**Tech Stack:** Java 21 (virtual threads), Spring Boot 3.5.x, Spring Cloud Gateway, Spring Kafka (KRaft), Spring Security OAuth2 resource server (RS256 JWT + JWKS), Spring Data JPA, Flyway, PostgreSQL + pgvector, Spring AI + Claude, Micrometer Tracing + OpenTelemetry, Tempo, Prometheus, Grafana, Testcontainers, React 19 + Vite + TanStack Query + Tailwind v4 + Vitest.
+**Tech Stack:** Java 21 (virtual threads), Spring Boot 3.5.x, Spring Cloud Gateway, Spring Kafka (KRaft), Spring Security OAuth2 resource server (RS256 JWT + JWKS), Spring Data JPA, Flyway, PostgreSQL + pgvector, Spring AI over OpenRouter (a free model) with a local embeddings model, Micrometer Tracing + OpenTelemetry, Tempo, Prometheus, Grafana, Testcontainers, React 19 + Vite + TanStack Query + Tailwind v4 + Vitest.
 
 ## Global Constraints
 
@@ -74,7 +74,7 @@ Virtual-Bank-System/
   - `observability/`: tracing/JSON-logging config shared beans.
 - `docker-compose.yml` with `core` profile: `postgres` (one server, healthcheck), `kafka` (KRaft single broker, healthcheck), plus placeholders for the service containers added per phase.
 - `infra/postgres/init-databases.sql`: create `vbank_user`, `vbank_account`, `vbank_transaction`, `vbank_audit` databases; enable `pgcrypto` where needed.
-- `.env.example`: all config keys (DB creds, Kafka bootstrap, JWT key material refs, ANTHROPIC_API_KEY) with safe placeholder values.
+- `.env.example`: all config keys (DB creds, Kafka bootstrap, JWT key material refs, `OPENROUTER_API_KEY`, `AI_MODEL`) with safe placeholder values.
 - `.gitignore`: ignore `.idea/`, build output, local `.env`.
 
 **Tasks:**
@@ -140,9 +140,9 @@ Virtual-Bank-System/
 
 ## Phase 5: AI assistant (on-brand, real)
 
-**Goal:** A Spring AI assistant using Claude that answers balance questions via JWT-scoped tool-calling and policy questions via pgvector RAG, with no data-exfil hole.
+**Goal:** A Spring AI assistant over OpenRouter (a free, env-configurable model) that answers balance questions via JWT-scoped tool-calling and policy questions via pgvector RAG, with no data-exfil hole. No paid key required.
 
-**Files:** `ai-assistant-service/*` (Spring AI `ChatClient` + Claude; tools `getAccounts`, `getRecentTransactions`, `getBalance` calling the gateway with the user's token; pgvector `VectorStore`; a bank-policy corpus + an embedding loader; prompt-injection guards; graceful no-key degradation), pgvector in the `ai` compose profile.
+**Files:** `ai-assistant-service/*` (Spring AI `ChatClient` with the OpenAI client pointed at `https://openrouter.ai/api/v1`, model from `AI_MODEL`, key from `OPENROUTER_API_KEY`; tools `getAccounts`, `getRecentTransactions`, `getBalance` calling the gateway with the user's token; pgvector `VectorStore`; a local in-process embeddings model, for example all-MiniLM-L6-v2, since OpenRouter has no embeddings API; a bank-policy corpus + an embedding loader; prompt-injection guards; graceful degradation returning a clear "AI not configured" message when `OPENROUTER_API_KEY` is absent), pgvector in the `ai` compose profile. Do not use Anthropic or OpenAI directly.
 
 **Exit criteria:** Integration test (or recorded transcript) showing a balance answer via tool-calling scoped to the authenticated user, a policy answer via retrieval, a refusal of cross-user access, and clean behavior when no API key is set.
 
