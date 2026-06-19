@@ -33,6 +33,7 @@
         <module>account-service</module>
         <module>transaction-service</module>
         <module>audit-service</module>
+        <module>ai-assistant-service</module>
     </modules>
 
     <dependencyManagement>

@@ -145,6 +145,7 @@ services:
       ACCOUNT_SERVICE_URI: http://account-service:8082
       TRANSACTION_SERVICE_URI: http://transaction-service:8083
       AUDIT_SERVICE_URI: http://audit-service:8085
+      AI_ASSISTANT_URI: http://ai-assistant-service:8084
       JWKS_URI: http://user-service:8081/.well-known/jwks.json
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
     depends_on:
@@ -152,6 +153,35 @@ services:
       - account-service
       - transaction-service
       - audit-service
+
+  # ---- AI assistant (optional) ---------------------------------------------
+  # Behind the "ai" profile so the lean core run does not start it. Bring it up
+  # with: docker compose --profile ai up --build. It needs no Kafka and stores
+  # only policy embeddings in the shared Postgres' vbank_ai database. Set
+  # OPENROUTER_API_KEY in the environment to enable model replies; without it the
+  # service still runs and returns a clear "not configured" message.
+  ai-assistant-service:
+    profiles: ["ai"]
+    build:
+      context: .
+      args:
+        MODULE: ai-assistant-service
+    container_name: vbank-ai-assistant
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-vbank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vbank_dev_pw}
+      JWKS_URI: http://user-service:8081/.well-known/jwks.json
+      ACCOUNT_SERVICE_URI: http://account-service:8082
+      TRANSACTION_SERVICE_URI: http://transaction-service:8083
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      AI_MODEL: ${AI_MODEL:-meta-llama/llama-3.3-70b-instruct:free}
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres-data:

@@ -12,6 +12,7 @@ COPY user-service user-service
 COPY account-service account-service
 COPY transaction-service transaction-service
 COPY audit-service audit-service
+COPY ai-assistant-service ai-assistant-service
 RUN mvn -q -B -ntp -pl ${MODULE} -am -DskipTests package
 
 FROM eclipse-temurin:21-jre

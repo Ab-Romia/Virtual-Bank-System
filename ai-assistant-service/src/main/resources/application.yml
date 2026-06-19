@@ -1,0 +1,72 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: ai-assistant-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    # The vector store lives in the shared Postgres' vbank_ai database, which
+    # ships with the vector extension already enabled (see infra init script).
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/vbank_ai
+    username: ${POSTGRES_USER:vbank}
+    password: ${POSTGRES_PASSWORD:vbank_dev_pw}
+  ai:
+    # Chat runs through OpenRouter using the OpenAI-compatible client. The key is
+    # optional: with it blank the service still starts and the assistant returns a
+    # clear "not configured" message instead of failing.
+    openai:
+      base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+      api-key: ${OPENROUTER_API_KEY:}
+      chat:
+        # The chat model bean refuses to build with a blank key, so when no key is
+        # configured this placeholder lets the context start. The assistant checks
+        # the real key (spring.ai.openai.api-key) before ever calling the model and
+        # returns a clear "not configured" message instead, so no request is sent.
+        api-key: ${OPENROUTER_API_KEY:not-configured}
+        options:
+          model: ${AI_MODEL:meta-llama/llama-3.3-70b-instruct:free}
+    model:
+      # OpenRouter has no embeddings API, so embeddings use the local in-process
+      # transformers model (all-MiniLM-L6-v2, 384 dimensions). Selecting it here
+      # also turns off the OpenAI embedding auto-configuration, so the transformers
+      # model is the EmbeddingModel the vector store is wired with. No key needed.
+      embedding: transformers
+      # This service only needs chat. Turn off the OpenAI starter's other model
+      # types so the context starts without a key (each would otherwise demand one).
+      audio:
+        speech: none
+        transcription: none
+      image: none
+      moderation: none
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        dimensions: 384
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  # Tracing is off by default so the lean core run exports nothing; the
+  # observability override sets the sampling probability and OTLP endpoint.
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING:0.0}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}

@@ -49,6 +49,14 @@ spring:
                 - Path=/api/audit/**
               filters:
                 - StripPrefix=1
+
+            # AI banking assistant (optional, runs under the "ai" compose profile).
+            - id: assistant
+              uri: ${AI_ASSISTANT_URI:http://localhost:8084}
+              predicates:
+                - Path=/api/assistant/**
+              filters:
+                - StripPrefix=1
   security:
     oauth2:
       resourceserver:
